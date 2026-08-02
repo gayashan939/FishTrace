@@ -1,0 +1,20 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+@layer base {
+    :focus-visible { outline: 3px solid #0891b2; outline-offset: 2px; }
+    button, summary, a { -webkit-tap-highlight-color: transparent; }
+    button, input, select, textarea { min-height: 2.75rem; }
+    .admin-main table { min-width: 48rem; }
+    .admin-main th { white-space: nowrap; }
+    .admin-main section:has(> table), .admin-main .admin-table-region { overflow-x: auto; }
+    .admin-table-region:focus-visible { border-radius: .75rem; box-shadow: 0 0 0 3px rgb(8 145 178 / .35); outline: none; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+}

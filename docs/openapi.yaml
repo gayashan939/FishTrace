@@ -1,0 +1,310 @@
+openapi: 3.1.0
+info:
+  title: FishTrace API
+  version: 1.0.0-milestone
+servers:
+  - url: /api/v1
+components:
+  securitySchemes:
+    sanctum:
+      type: http
+      scheme: bearer
+  responses:
+    TooManyRequests:
+      description: Per-user API limit exhausted; honor Retry-After
+  schemas:
+    Error:
+      type: object
+      required: [error, meta]
+      properties:
+        error: {type: object}
+        meta: {type: object}
+    SensorReading:
+      type: object
+      required: [id, message_id, iot_device_id, transport_trip_id, product_temperature, air_temperature, humidity, latitude, longitude, speed_kph, battery_percentage, signal_strength, door_open, recorded_at, imported_at, reading_age_seconds, device_status]
+      properties:
+        id: {type: string, format: uuid}
+        message_id: {type: string}
+        iot_device_id: {type: string, format: uuid}
+        transport_trip_id: {type: [string, 'null'], format: uuid}
+        product_temperature: {type: [number, 'null']}
+        air_temperature: {type: [number, 'null']}
+        humidity: {type: [number, 'null']}
+        latitude: {type: [number, 'null']}
+        longitude: {type: [number, 'null']}
+        speed_kph: {type: [number, 'null']}
+        battery_percentage: {type: [number, 'null']}
+        signal_strength: {type: [number, 'null']}
+        door_open: {type: [boolean, 'null']}
+        recorded_at: {type: [string, 'null'], format: date-time}
+        imported_at: {type: [string, 'null'], format: date-time}
+        reading_age_seconds: {type: [integer, 'null'], minimum: 0}
+        device_status: {type: [string, 'null'], enum: [ACTIVE, INACTIVE, MAINTENANCE, null]}
+    AIPrediction:
+      type: object
+      required: [id, fish_batch_id, risk_level, confidence, probabilities, recommendation, model_version, provider, predicted_at, decision_support, disclaimer]
+      properties:
+        id: {type: string, format: uuid}
+        fish_batch_id: {type: string, format: uuid}
+        transport_trip_id: {type: [string, 'null'], format: uuid}
+        risk_level: {type: string, enum: [LOW, MEDIUM, HIGH]}
+        confidence: {type: number, minimum: 0, maximum: 1}
+        probabilities:
+          type: object
+          required: [LOW, MEDIUM, HIGH]
+          properties:
+            LOW: {type: number, minimum: 0, maximum: 1}
+            MEDIUM: {type: number, minimum: 0, maximum: 1}
+            HIGH: {type: number, minimum: 0, maximum: 1}
+        recommendation: {type: string}
+        model_version: {type: string}
+        provider: {type: string}
+        predicted_at: {type: string, format: date-time}
+        decision_support: {type: boolean, const: true}
+        disclaimer: {type: string}
+paths:
+  /auth/login:
+    post:
+      summary: Exchange credentials for a Sanctum token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, device_name]
+              properties:
+                email: {type: string, format: email}
+                password: {type: string, format: password}
+                device_name: {type: string}
+      responses:
+        '200': {description: Authenticated}
+        '422': {description: Invalid credentials}
+  /auth/forgot-password:
+    post:
+      summary: Request a password-reset verification code without revealing account existence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: {type: string, format: email}
+      responses:
+        '200': {description: Generic delivery response}
+        '422': {description: Invalid email format}
+        '429': {description: Request rate limit exceeded}
+  /auth/verify-otp:
+    post:
+      summary: Verify a six-digit password-reset code and issue a one-use opaque token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, otp]
+              properties:
+                email: {type: string, format: email}
+                otp: {type: string, pattern: '^[0-9]{6}$'}
+      responses:
+        '200': {description: Reset token and remaining lifetime}
+        '422': {description: Invalid, expired, consumed, or attempt-limited code}
+        '429': {description: Verification rate limit exceeded}
+  /auth/reset-password:
+    post:
+      summary: Consume a verified reset token, change the password, and revoke all sessions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, reset_token, password, password_confirmation]
+              properties:
+                email: {type: string, format: email}
+                reset_token: {type: string, minLength: 64, maxLength: 64}
+                password: {type: string, format: password, minLength: 10}
+                password_confirmation: {type: string, format: password}
+      responses:
+        '200': {description: Password changed and sessions revoked}
+        '422': {description: Invalid token or password}
+        '429': {description: Reset rate limit exceeded}
+  /firebase/session:
+    post:
+      summary: Issue a Firebase custom token for the authenticated Laravel user
+      security: [{sanctum: []}]
+      responses:
+        '200': {description: Firebase session details}
+  /admin/users:
+    get: {summary: Search and filter managed users, security: [{sanctum: []}], responses: {'200': {description: Paginated users}, '403': {description: Administrator role required}}}
+    post: {summary: Create a user with role and organization access, security: [{sanctum: []}], responses: {'201': {description: Created}, '422': {description: Invalid or incompatible access assignment}}}
+  /admin/users/{user}:
+    get: {summary: Show a managed user, security: [{sanctum: []}], responses: {'200': {description: User details}}}
+    patch: {summary: Update identity and access and revoke sessions, security: [{sanctum: []}], responses: {'200': {description: Updated}, '409': {description: Administrator continuity conflict}}}
+  /admin/users/{user}/deactivate:
+    post: {summary: Disable a user and revoke sessions, security: [{sanctum: []}], responses: {'200': {description: Disabled}, '409': {description: Administrator continuity conflict}}}
+  /admin/users/{user}/reset-password:
+    post: {summary: Reset a password and revoke sessions, security: [{sanctum: []}], responses: {'200': {description: Password reset}}}
+  /admin/organizations:
+    get: {summary: Search and filter organizations, security: [{sanctum: []}], responses: {'200': {description: Paginated organizations}}}
+    post: {summary: Create an organization, security: [{sanctum: []}], responses: {'201': {description: Created}}}
+  /admin/organizations/{organization}/deactivate:
+    post: {summary: Deactivate an organization without active members, security: [{sanctum: []}], responses: {'200': {description: Deactivated}, '409': {description: Active users remain assigned}}}
+  /admin/roles:
+    get: {summary: List fixed system roles, security: [{sanctum: []}], responses: {'200': {description: Roles}}}
+  /boats:
+    get: {summary: List organization boats, security: [{sanctum: []}], responses: {'200': {description: Paginated boats}}}
+    post: {summary: Create an owned boat, security: [{sanctum: []}], responses: {'201': {description: Created}}}
+  /fisher/dashboard:
+    get: {summary: Return fisher-scoped trip, boat, catch, allocation, batch, and recent-trip metrics, security: [{sanctum: []}], responses: {'200': {description: Fisher dashboard}}}
+  /fisher/reference-data:
+    get: {summary: Return active species, fishing gear types, and landing sites for Fisher forms, security: [{sanctum: []}], responses: {'200': {description: Active Fisher reference data}, '403': {description: Fisher role required}}}
+  /fishing-trips:
+    get: {summary: List the fisher's organization-scoped trips, security: [{sanctum: []}], responses: {'200': {description: Paginated trips}}}
+    post: {summary: Create a draft fishing trip, security: [{sanctum: []}], responses: {'201': {description: Created}}}
+  /fishing-trips/{fishingTrip}:
+    get: {summary: Return an owned fishing trip, security: [{sanctum: []}], responses: {'200': {description: Fishing trip}, '403': {description: Ownership denied}}}
+    put: {summary: Replace editable fields on an owned draft fishing trip, security: [{sanctum: []}], responses: {'200': {description: Updated}, '409': {description: Trip is no longer draft}}}
+    patch: {summary: Update editable fields on an owned draft fishing trip, security: [{sanctum: []}], responses: {'200': {description: Updated}, '409': {description: Trip is no longer draft}}}
+  /catches:
+    get: {summary: List catches from the fisher's owned trips, security: [{sanctum: []}], responses: {'200': {description: Paginated catches}}}
+    post: {summary: Idempotently record a catch on an active trip, security: [{sanctum: []}], responses: {'201': {description: Created or replayed}}}
+  /catches/{catchRecord}:
+    get: {summary: Return a catch from an owned fishing trip, security: [{sanctum: []}], responses: {'200': {description: Catch record}, '403': {description: Ownership denied}}}
+    put: {summary: Replace mutable catch fields while its owned trip is active, security: [{sanctum: []}], responses: {'200': {description: Updated}, '422': {description: Allocation invariant violated}}}
+    patch: {summary: Update mutable catch fields while its owned trip is active, security: [{sanctum: []}], responses: {'200': {description: Updated}, '422': {description: Allocation invariant violated}}}
+    delete: {summary: Delete an unallocated catch while its owned trip is active, security: [{sanctum: []}], responses: {'200': {description: Deleted}, '409': {description: Catch is allocated or trip is not active}}}
+  /batches:
+    post: {summary: Allocate catches and issue a secure QR, security: [{sanctum: []}], responses: {'201': {description: Created}, '422': {description: Invalid allocation}}}
+  /batches/{batch}/documents:
+    get: {summary: List private document descriptors for an authorized batch, security: [{sanctum: []}], responses: {'200': {description: Paginated batch documents}, '403': {description: Batch access denied}}}
+    post: {summary: Upload a PDF or image document to a Fisher-organization batch, security: [{sanctum: []}], responses: {'201': {description: Private document stored}, '403': {description: Fisher organization access required}, '422': {description: Invalid category, file type, or size}}}
+  /processing-records/{processingRecord}:
+    get: {summary: Return an organization-scoped processing record with steps and inspections, security: [{sanctum: []}], responses: {'200': {description: Processing record}, '403': {description: Organization access denied}}}
+    put: {summary: Update notes on a non-completed processing record, security: [{sanctum: []}], responses: {'200': {description: Notes updated}, '409': {description: Processing record is complete}, '422': {description: Invalid notes}}}
+  /processing-records/{processingRecord}/steps/{step}/start:
+    post: {summary: Start the next pending step belonging to the processing record, security: [{sanctum: []}], responses: {'200': {description: Step started}, '404': {description: Step does not belong to record}, '409': {description: Invalid sequence or workflow state}}}
+  /processing-records/{processingRecord}/steps/{step}/complete:
+    post: {summary: Complete an active step belonging to an active processing record, security: [{sanctum: []}], responses: {'200': {description: Step completed}, '404': {description: Step does not belong to record}, '409': {description: Invalid workflow state}, '422': {description: Invalid measurements or reconciliation}}}
+  /package-labels/{label}/print:
+    get: {summary: Render a read-only printable package label without changing label state, security: [{sanctum: []}], responses: {'200': {description: Printable HTML label}, '403': {description: Label access denied}}}
+  /retailer/dashboard:
+    get: {summary: Return organization-scoped retail inventory and sales metrics, security: [{sanctum: []}], responses: {'200': {description: Retailer dashboard}, '403': {description: Retailer role required}}}
+  /retailer/receipts:
+    get: {summary: List organization-scoped retail receipts, security: [{sanctum: []}], responses: {'200': {description: Paginated receipts}}}
+    post: {summary: Receive a full package label into an active retail location, security: [{sanctum: []}], responses: {'201': {description: Receipt and inventory lot created}, '409': {description: Duplicate receipt or unavailable batch}, '422': {description: Package count or input invalid}}}
+  /retailer/receipts/{receipt}:
+    get: {summary: Return an organization-scoped receipt and inventory lot, security: [{sanctum: []}], responses: {'200': {description: Receipt detail}, '403': {description: Organization access denied}}}
+  /retailer/inventory:
+    get: {summary: List organization-scoped inventory lots, security: [{sanctum: []}], responses: {'200': {description: Paginated inventory}}}
+  /retailer/inventory/{lot}:
+    get: {summary: Return an organization-scoped inventory lot and immutable movements, security: [{sanctum: []}], responses: {'200': {description: Inventory detail}, '403': {description: Organization access denied}}}
+  /retailer/stock-adjustments:
+    post: {summary: Record a reasoned ADD or REMOVE correction while preserving package reconciliation, security: [{sanctum: []}], responses: {'200': {description: Inventory adjusted with immutable movement}, '403': {description: Organization access denied}, '409': {description: Terminal lot}, '422': {description: Invalid quantity, direction, or reason}}}
+  /retailer/sales:
+    get: {summary: List organization-scoped retail sales, security: [{sanctum: []}], responses: {'200': {description: Paginated sales}}}
+    post: {summary: Record a locked inventory sale with strict client-reference replay equivalence, security: [{sanctum: []}], responses: {'201': {description: Sale created or exact replay returned}, '409': {description: Client reference payload mismatch or unavailable inventory}, '422': {description: Quantity or payload invalid}}}
+  /retailer/sales/{sale}:
+    get: {summary: Return an organization-scoped retail sale, security: [{sanctum: []}], responses: {'200': {description: Sale detail}, '403': {description: Organization access denied}}}
+  /retailer/alerts:
+    get: {summary: List cold-chain alerts linked to batches in the retailer's inventory, security: [{sanctum: []}], responses: {'200': {description: Paginated retailer alerts}, '403': {description: Retailer role required}}}
+  /retailer/recalls/{alert}/quarantine:
+    post: {summary: Recall saleable retailer inventory affected by an alert and acknowledge it, security: [{sanctum: []}], responses: {'200': {description: Inventory quarantined}, '403': {description: Alert does not affect owned inventory}, '409': {description: Alert resolved or no saleable inventory}}}
+  /retailer/alerts/{alert}/resolve:
+    post: {summary: Resolve an owned-inventory alert with an audited note, security: [{sanctum: []}], responses: {'200': {description: Alert resolved}, '403': {description: Alert does not affect owned inventory}, '409': {description: Alert already resolved}}}
+  /retailer/reports/summary:
+    get: {summary: Return organization-scoped retail summary metrics, security: [{sanctum: []}], responses: {'200': {description: Retail summary}}}
+  /retailer/reports/sales:
+    get: {summary: Return the bounded organization-scoped sales report, security: [{sanctum: []}], responses: {'200': {description: Sales report}}}
+  /retailer/reports/inventory:
+    get: {summary: Return the bounded organization-scoped inventory report, security: [{sanctum: []}], responses: {'200': {description: Inventory report}}}
+  /transport-trips/{trip}/live-access:
+    get:
+      summary: Return authorized Firebase live path and MySQL fallback state
+      security: [{sanctum: []}]
+      parameters: [{in: path, name: trip, required: true, schema: {type: string, format: uuid}}]
+      responses: {'200': {description: Live access descriptor}}
+  /transport-trips/{trip}/sensor-readings:
+    get:
+      summary: Return privacy-whitelisted permanent trip telemetry
+      security: [{sanctum: []}]
+      parameters:
+        - {in: path, name: trip, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: date_from, schema: {type: string, format: date-time}}
+        - {in: query, name: date_to, schema: {type: string, format: date-time}}
+        - {in: query, name: page, schema: {type: integer, minimum: 1}}
+        - {in: query, name: per_page, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
+      responses: {'200': {description: Paginated readings}, '403': {description: Trip access denied}, '422': {description: Invalid filter}}
+  /transport-trips/{trip}/sensor-readings/latest:
+    get: {summary: Return latest whitelisted reading with age, device state, and active-alert count, security: [{sanctum: []}], responses: {'200': {description: Latest reading or null}, '403': {description: Trip access denied}}}
+  /transport-trips/{trip}/sensor-summary:
+    get:
+      summary: Return hourly or daily permanent telemetry aggregates and whitelisted latest state
+      security: [{sanctum: []}]
+      parameters:
+        - {in: path, name: trip, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: period, schema: {type: string, enum: [hour, day], default: day}}
+      responses: {'200': {description: Telemetry summary}, '422': {description: Invalid period}}
+  /transport-trips/{trip}/alerts:
+    get:
+      summary: Return filtered trip cold-chain alerts
+      security: [{sanctum: []}]
+      parameters:
+        - {in: path, name: trip, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: status, schema: {type: string, enum: [OPEN, ACKNOWLEDGED, RESOLVED]}}
+        - {in: query, name: severity, schema: {type: string, enum: [INFO, WARNING, CRITICAL]}}
+        - {in: query, name: page, schema: {type: integer, minimum: 1}}
+        - {in: query, name: per_page, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses: {'200': {description: Paginated alerts}, '422': {description: Invalid filter}}
+  /transporter/dashboard:
+    get: {summary: Return organization-scoped trip, assignment, alert, device, and recent-trip metrics, security: [{sanctum: []}], responses: {'200': {description: Transport dashboard}}}
+  /vehicles:
+    get: {summary: List organization vehicles, security: [{sanctum: []}], responses: {'200': {description: Paginated vehicles}}}
+    post: {summary: Create an organization vehicle, security: [{sanctum: []}], responses: {'201': {description: Vehicle created}}}
+  /transport-trips/{trip}/checklist:
+    get: {summary: Return the mandatory pre-trip checklist, security: [{sanctum: []}], responses: {'200': {description: Checklist}}}
+    post: {summary: Update checklist item states under a locked pre-departure trip, security: [{sanctum: []}], responses: {'200': {description: Checklist updated}, '409': {description: Trip already departed}}}
+  /transport-trips/{trip}/device:
+    post: {summary: Assign an active provisioned device under locked trip and device state checks, security: [{sanctum: []}], responses: {'200': {description: Assignment persisted and mirror attempted}, '409': {description: Trip departed, device unavailable, or assignment conflict}}}
+    delete: {summary: End the active device assignment before departure, security: [{sanctum: []}], responses: {'200': {description: Assignment ended}, '409': {description: Trip already departed}}}
+  /transport-trips/{trip}/incidents:
+    post: {summary: Record an incident after locking and confirming active transport, security: [{sanctum: []}], responses: {'201': {description: Incident recorded}, '409': {description: Trip not active}}}
+  /transport-trips/{trip}/delivery-confirmation:
+    post: {summary: Record receiver details after locking and confirming active transport, security: [{sanctum: []}], responses: {'200': {description: Delivery confirmed}, '409': {description: Trip not active}}}
+  /iot/devices/{device}/firebase-rotate:
+    post: {summary: Rotate and return an ESP32 credential once, security: [{sanctum: []}], responses: {'200': {description: One-time credential}, '409': {description: Device unprovisioned or actively assigned}}}
+  /iot/devices/{device}/health:
+    get: {summary: Return privacy-safe device health and synchronization counts, security: [{sanctum: []}], responses: {'200': {description: Device health}}}
+  /iot/devices/{device}/readings:
+    get:
+      summary: Return privacy-whitelisted permanent device telemetry
+      security: [{sanctum: []}]
+      parameters:
+        - {in: path, name: device, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: date_from, schema: {type: string, format: date-time}}
+        - {in: query, name: date_to, schema: {type: string, format: date-time}}
+        - {in: query, name: page, schema: {type: integer, minimum: 1}}
+        - {in: query, name: per_page, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
+      responses: {'200': {description: Paginated readings}, '403': {description: Device access denied}, '422': {description: Invalid filter}}
+  /iot/devices/{device}/latest-reading:
+    get: {summary: Return the latest whitelisted device reading with age and device state, security: [{sanctum: []}], responses: {'200': {description: Latest reading or null}}}
+  /iot/devices/{device}/firebase-sync-status:
+    get: {summary: Return a privacy-safe synchronization cursor and bounded sanitized failures, security: [{sanctum: []}], responses: {'200': {description: Synchronization status}}}
+  /batches/{batch}/ai-predictions:
+    get:
+      summary: Return privacy-whitelisted AI decision-support history
+      security: [{sanctum: []}]
+      parameters: [{in: path, name: batch, required: true, schema: {type: string, format: uuid}}]
+      responses: {'200': {description: Paginated AI predictions}, '403': {description: Batch access denied}}
+  /batches/{batch}/ai-predictions/latest:
+    get: {summary: Return the latest whitelisted AI decision-support result, security: [{sanctum: []}], responses: {'200': {description: Latest prediction or null}, '403': {description: Batch access denied}}}
+  /batches/{batch}/ai-predictions/request:
+    post: {summary: Queue one batch-unique spoilage-risk prediction request, security: [{sanctum: []}], responses: {'202': {description: Prediction queued}, '403': {description: Batch access denied}, '429': {$ref: '#/components/responses/TooManyRequests'}}}
+  /public/trace/{token}:
+    get:
+      summary: Return a privacy-filtered public trace with aggregate persisted blockchain evidence
+      parameters: [{in: path, name: token, required: true, schema: {type: string}}]
+      responses: {'200': {description: Trace}, '404': {description: Unknown/private QR}, '410': {description: Revoked QR}}

@@ -1,0 +1,6 @@
+{
+  "indexes": [
+    {"path": "/telemetry/{deviceUid}", "fields": ["recordedAt", "syncStatus"]}
+  ],
+  "note": "RTDB indexes are deployed through database.rules.json; this file documents the required logical indexes."
+}

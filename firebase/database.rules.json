@@ -1,0 +1,37 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "deviceAssignments": {
+      "$deviceUid": {
+        ".read": "auth != null && auth.uid === $deviceUid",
+        ".write": false
+      }
+    },
+    "tripMembers": {
+      "$tripId": {
+        ".read": false,
+        ".write": false
+      }
+    },
+    "liveTrips": {
+      "$tripId": {
+        ".read": "auth != null && root.child('tripMembers').child($tripId).child(auth.uid).val() === true",
+        ".write": "auth != null && root.child('deviceAssignments').child(auth.uid).child('active').val() === true && root.child('deviceAssignments').child(auth.uid).child('tripId').val() === $tripId",
+        ".validate": "newData.hasChildren(['deviceId','productTemperature','recordedAt','messageId']) && newData.child('deviceId').val() === root.child('deviceAssignments').child(auth.uid).child('deviceId').val() && newData.child('productTemperature').isNumber() && newData.child('productTemperature').val() >= -20 && newData.child('productTemperature').val() <= 50 && newData.child('recordedAt').isNumber() && newData.child('messageId').isString()",
+        "$other": { ".validate": "$other.matches(/^(deviceId|deviceCode|primaryBatchId|productTemperature|airTemperature|humidity|latitude|longitude|speedKph|batteryPercentage|signalStrength|doorOpen|temperatureStatus|recordedAt|messageId)$/)" }
+      }
+    },
+    "telemetry": {
+      "$deviceUid": {
+        ".indexOn": ["recordedAt", "syncStatus"],
+        "$messageId": {
+          ".read": "auth != null && auth.uid === $deviceUid",
+          ".write": "auth != null && auth.uid === $deviceUid && !data.exists() && root.child('deviceAssignments').child($deviceUid).child('active').val() === true && newData.child('tripId').val() === root.child('deviceAssignments').child($deviceUid).child('tripId').val()",
+          ".validate": "newData.hasChildren(['deviceId','tripId','productTemperature','recordedAt','schemaVersion']) && newData.child('deviceId').val() === root.child('deviceAssignments').child($deviceUid).child('deviceId').val() && newData.child('productTemperature').isNumber() && newData.child('productTemperature').val() >= -20 && newData.child('productTemperature').val() <= 50 && (!newData.child('humidity').exists() || (newData.child('humidity').isNumber() && newData.child('humidity').val() >= 0 && newData.child('humidity').val() <= 100)) && (!newData.child('batteryPercentage').exists() || (newData.child('batteryPercentage').isNumber() && newData.child('batteryPercentage').val() >= 0 && newData.child('batteryPercentage').val() <= 100)) && (!newData.child('latitude').exists() || (newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90)) && (!newData.child('longitude').exists() || (newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180)) && newData.child('recordedAt').isNumber() && newData.child('schemaVersion').val() === 1",
+          "$other": { ".validate": "$other.matches(/^(deviceId|tripId|primaryBatchId|productTemperature|airTemperature|humidity|latitude|longitude|speedKph|batteryPercentage|signalStrength|doorOpen|recordedAt|schemaVersion|syncStatus)$/)" }
+        }
+      }
+    }
+  }
+}

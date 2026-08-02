@@ -1,0 +1,13 @@
+<x-layouts.admin title="System settings | FishTrace">
+    <header><p class="text-sm font-medium text-cyan-700">System settings</p><h1 class="text-3xl font-bold">Operational configuration</h1><p class="mt-1 max-w-3xl text-slate-500">Manage non-secret runtime behavior. Credentials, service endpoints, debug mode, and encryption keys remain environment-controlled.</p></header>
+    @include('admin.settings._nav')
+    <form method="post" action="{{ route('admin.settings.system.update') }}" class="mt-6 max-w-3xl rounded-xl bg-white p-6 shadow-sm">@csrf @method('PUT')
+        <div class="grid gap-5 md:grid-cols-2">
+            <label><span class="text-sm font-medium">Platform name</span><input name="platform_name" required maxlength="80" value="{{ old('platform_name', $settings['platform_name']) }}" class="mt-1 w-full rounded-lg border-slate-300"></label>
+            <label><span class="text-sm font-medium">Public support email</span><input type="email" name="support_email" maxlength="160" value="{{ old('support_email', $settings['support_email']) }}" class="mt-1 w-full rounded-lg border-slate-300"><span class="mt-1 block text-xs text-slate-500">Displayed to consumers; leave blank to hide.</span></label>
+            <label><span class="text-sm font-medium">Firebase telemetry retention</span><span class="mt-1 flex items-center gap-2"><input type="number" min="24" max="72" name="telemetry_retention_hours" required value="{{ old('telemetry_retention_hours', $settings['telemetry_retention_hours']) }}" class="w-full rounded-lg border-slate-300"><span class="text-sm text-slate-500">hours</span></span></label>
+            <label class="flex items-center gap-3 self-end"><input type="hidden" name="consumer_portal_enabled" value="0"><input type="checkbox" name="consumer_portal_enabled" value="1" class="rounded border-slate-300 text-cyan-700" @checked((bool) old('consumer_portal_enabled', $settings['consumer_portal_enabled']))><span><span class="block text-sm font-medium">Consumer trace portal enabled</span><span class="block text-xs text-slate-500">Disabling returns a temporary-unavailable response.</span></span></label>
+            <label class="md:col-span-2"><span class="text-sm font-medium">Consumer portal notice</span><textarea name="consumer_portal_notice" maxlength="500" rows="4" class="mt-1 w-full rounded-lg border-slate-300">{{ old('consumer_portal_notice', $settings['consumer_portal_notice']) }}</textarea><span class="mt-1 block text-xs text-slate-500">Public operational notice; do not enter internal or personal information.</span></label>
+        </div><button class="mt-7 rounded-lg bg-[#075e63] px-5 py-2.5 font-semibold text-white">Save system settings</button>
+    </form>
+</x-layouts.admin>
