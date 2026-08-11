@@ -4,5 +4,31 @@
     @if ($reconciliation['overallocated'] > 0)<div class="mt-6 rounded-xl border border-red-300 bg-red-50 p-4 font-semibold text-red-900">Overallocated by {{ number_format($reconciliation['overallocated'], 3) }} kg.</div>@elseif ($reconciliation['mismatch'])<div class="mt-6 rounded-xl border border-red-300 bg-red-50 p-4 font-semibold text-red-900">Stored allocation does not match the batch allocation ledger.</div>@elseif ($reconciliation['unallocated'] > 0)<div class="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 font-semibold text-amber-900">{{ number_format($reconciliation['unallocated'], 3) }} kg remains unallocated.</div>@endif
     <section class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><article class="rounded-xl bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Trip</p><a href="{{ route('admin.fishing.trips.show', $catch->trip) }}" class="mt-2 block font-bold text-cyan-700">{{ $catch->trip?->trip_code }}</a></article><article class="rounded-xl bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Fisher</p><p class="mt-2 font-bold">{{ $catch->trip?->fisher?->name }}</p></article><article class="rounded-xl bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Vessel</p><p class="mt-2 font-bold">{{ $catch->trip?->boat?->name }}</p><p class="text-xs text-slate-500">{{ $catch->trip?->boat?->registration_number }}</p></article><article class="rounded-xl bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Species and gear</p><p class="mt-2 font-bold">{{ $catch->species?->common_name }}</p><p class="text-xs text-slate-500">{{ $catch->gearType?->name ?? 'Gear not recorded' }}</p></article><article class="rounded-xl bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Quantity</p><p class="mt-2 text-2xl font-bold">{{ $catch->quantity }}</p></article></section>
     <section class="mt-6 grid gap-4 md:grid-cols-4"><article class="rounded-xl bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Caught weight</p><p class="mt-2 text-2xl font-bold">{{ number_format($reconciliation['weight'], 3) }} kg</p></article><article class="rounded-xl bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Stored allocated</p><p class="mt-2 text-2xl font-bold">{{ number_format($reconciliation['stored_allocated'], 3) }} kg</p></article><article class="rounded-xl bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Ledger allocated</p><p class="mt-2 text-2xl font-bold">{{ number_format($reconciliation['ledger_allocated'], 3) }} kg</p></article><article class="rounded-xl bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Available</p><p class="mt-2 text-2xl font-bold">{{ number_format($reconciliation['unallocated'], 3) }} kg</p></article></section>
+    <section class="mt-6 grid gap-6 xl:grid-cols-2">
+        <article class="rounded-xl bg-white p-6 shadow-sm">
+            <h2 class="font-bold">Catch location</h2>
+            @if ($catch->latitude !== null && $catch->longitude !== null)
+                <p class="mt-3 text-2xl font-semibold">{{ number_format((float) $catch->latitude, 6) }}, {{ number_format((float) $catch->longitude, 6) }}</p>
+                <a class="mt-4 inline-flex rounded-lg border border-cyan-700 px-4 py-2 text-cyan-800" href="https://www.openstreetmap.org/?mlat={{ $catch->latitude }}&mlon={{ $catch->longitude }}#map=12/{{ $catch->latitude }}/{{ $catch->longitude }}" target="_blank" rel="noopener noreferrer">Open location map</a>
+            @else
+                <p class="mt-3 text-slate-500">No GPS location was recorded.</p>
+            @endif
+        </article>
+        <article class="rounded-xl bg-white p-6 shadow-sm">
+            <h2 class="font-bold">Catch evidence photos</h2>
+            @if ($catch->images->isEmpty())
+                <p class="mt-3 text-slate-500">No catch photos were attached.</p>
+            @else
+                <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    @foreach ($catch->images as $image)
+                        <a href="{{ route('admin.fishing.catches.images.show', [$catch, $image]) }}" target="_blank" rel="noopener noreferrer" class="overflow-hidden rounded-lg border bg-slate-50">
+                            <img src="{{ route('admin.fishing.catches.images.show', [$catch, $image]) }}" alt="Catch evidence {{ $loop->iteration }}" class="h-36 w-full object-cover" loading="lazy">
+                            <span class="block truncate p-2 text-xs text-slate-600">{{ $image->original_name }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+        </article>
+    </section>
     <section class="mt-6 overflow-hidden rounded-xl bg-white shadow-sm"><header class="border-b p-5"><h2 class="font-bold">Batch allocations</h2></header><table class="w-full text-left text-sm"><thead class="border-b bg-slate-50 text-slate-500"><tr><th class="p-4">Batch</th><th>Status</th><th>Product</th><th>Batch weight</th><th>Allocated from catch</th></tr></thead><tbody>@forelse ($catch->batches as $batch)<tr class="border-b border-slate-100"><td class="p-4"><a href="{{ route('admin.batches.show', $batch) }}" class="font-semibold text-cyan-700">{{ $batch->batch_code }}</a></td><td>{{ $batch->status->value }}</td><td>{{ $batch->product_type }}</td><td>{{ $batch->total_weight_kg }} kg</td><td>{{ $batch->pivot->allocated_weight_kg }} kg</td></tr>@empty<tr><td colspan="5" class="p-10 text-center text-slate-500">This catch has not been allocated to a batch.</td></tr>@endforelse</tbody></table></section>
 </x-layouts.admin>

@@ -28,4 +28,21 @@ class PrivateFileDownload
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
+
+    public function preview(FileAsset $file, string $auditAction, ?User $actor = null): StreamedResponse
+    {
+        $disk = Storage::disk($file->disk);
+        abort_unless($disk->exists($file->path), 404, 'The stored file is unavailable.');
+
+        $this->audit->record($auditAction, $file, null, [
+            'original_name' => $file->original_name,
+            'size_bytes' => $file->size_bytes,
+        ], $actor);
+
+        return $disk->response($file->path, $file->original_name, [
+            'Content-Type' => $file->mime_type,
+            'Content-Security-Policy' => "default-src 'none'; sandbox",
+            'X-Content-Type-Options' => 'nosniff',
+        ], 'inline');
+    }
 }

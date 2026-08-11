@@ -11,6 +11,7 @@ use App\Models\RetailReceipt;
 use App\Models\RetailSale;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 
 class RetailOperationsQuery
 {
@@ -31,11 +32,32 @@ class RetailOperationsQuery
     public function incoming(int $perPage): LengthAwarePaginator
     {
         return PackageLabel::query()
-            ->with('batch.species')
+            ->with(['batch.species', 'batch.organization'])
             ->whereDoesntHave('retailReceipt')
             ->whereHas('batch', fn ($query) => $query->whereIn('status', [BatchStatus::PROCESSED, BatchStatus::READY_FOR_TRANSPORT, BatchStatus::IN_TRANSPORT])->where('is_recalled', false))
             ->latest()
             ->paginate($perPage);
+    }
+
+    public function resolveIncomingLabel(string $scannedValue): ?PackageLabel
+    {
+        $value = trim($scannedValue);
+        $path = parse_url($value, PHP_URL_PATH);
+        $token = is_string($path) ? basename(trim($path, '/')) : $value;
+
+        return PackageLabel::query()
+            ->with(['batch.species', 'batch.organization'])
+            ->whereDoesntHave('retailReceipt')
+            ->whereHas('batch', fn ($query) => $query->whereIn('status', [BatchStatus::PROCESSED, BatchStatus::READY_FOR_TRANSPORT, BatchStatus::IN_TRANSPORT])->where('is_recalled', false))
+            ->where(function ($query) use ($value, $token): void {
+                if (Str::isUuid($value)) {
+                    $query->orWhereKey($value);
+                }
+                $query->orWhere('label_code', $value)
+                    ->orWhere('label_code', $token)
+                    ->orWhere('public_token', $token);
+            })
+            ->first();
     }
 
     public function receipts(User $user, int $perPage): LengthAwarePaginator

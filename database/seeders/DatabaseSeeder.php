@@ -57,7 +57,7 @@ class DatabaseSeeder extends Seeder
         $processingTypeId = (string) Str::uuid();
         DB::table('processing_types')->insert(['id' => $processingTypeId, 'name' => 'Chilled Whole Fish Processing', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
         $qualityGradeId = (string) Str::uuid();
-        DB::table('quality_grades')->insert(['id' => $qualityGradeId, 'code' => 'GRADE-A', 'name' => 'Export Grade A', 'rank' => 1, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('quality_grades')->insert(['id' => $qualityGradeId, 'code' => 'A', 'name' => 'Export Grade A', 'rank' => 1, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('processor_profiles')->insert(['id' => (string) Str::uuid(), 'user_id' => $users['PROCESSOR']->id, 'organization_id' => $organizations['PROCESSOR']->id, 'facility_name' => 'Ceylon Blue Processing - Mirissa', 'license_number' => 'SL-FP-2026-001', 'created_at' => now(), 'updated_at' => now()]);
         $species = FishSpecies::create(['common_name' => 'Yellowfin Tuna', 'scientific_name' => 'Thunnus albacares']);
         $gearId = (string) Str::uuid();
@@ -95,9 +95,9 @@ class DatabaseSeeder extends Seeder
             return PackageLabel::create(['fish_batch_id' => $child->id, 'label_code' => $data[3], 'public_token' => $data[4], 'package_weight_kg' => $data[0] / $data[1], 'package_count' => $data[1]]);
         });
         app(ReceiveRetailPackage::class)->execute($users['RETAILER'], $retailLabels->first(), ['retail_location_id' => $retailLocation->id, 'received_package_count' => 4, 'condition_temperature' => -1.2, 'expires_at' => now()->addDays(21)->toIso8601String(), 'notes' => 'Demo retailer intake verified.']);
-        $vehicle = Vehicle::create(['organization_id' => $organizations['TRANSPORTER']->id, 'registration_number' => 'WP-CAB-2048', 'name' => 'Reefer Truck 01']);
+        $vehicle = Vehicle::create(['organization_id' => $organizations['TRANSPORTER']->id, 'registration_number' => 'WP-CAB-2048', 'name' => 'Reefer Truck 01', 'vehicle_type' => 'Refrigerated Truck', 'refrigeration_category' => 'Category A', 'capacity_tonnes' => 1.2, 'reefer_unit' => 'Carrier Supra 550', 'min_temperature_celsius' => -20, 'max_temperature_celsius' => 20, 'default_driver_name' => 'Alex Johnson']);
         $device = IotDevice::create(['organization_id' => $organizations['TRANSPORTER']->id, 'device_code' => 'IOT-001', 'serial_number' => 'ESP32-FT-0001', 'display_name' => 'Reefer Sensor 01', 'status' => 'ACTIVE', 'firmware_version' => '1.2.0', 'firebase_uid' => 'device:demo-iot-001', 'firebase_email' => 'device+iot-001@fishtrace.invalid', 'firebase_auth_enabled' => true, 'credential_version' => 1]);
-        $transport = TransportTrip::create(['organization_id' => $organizations['TRANSPORTER']->id, 'created_by' => $users['TRANSPORTER']->id, 'vehicle_id' => $vehicle->id, 'trip_code' => 'TTR-DEMO-001', 'driver_name' => 'Sunil Kumara', 'status' => 'ACTIVE', 'origin' => 'Mirissa', 'destination' => 'Colombo', 'started_at' => now()->subHours(3)]);
+        $transport = TransportTrip::create(['organization_id' => $organizations['TRANSPORTER']->id, 'created_by' => $users['TRANSPORTER']->id, 'vehicle_id' => $vehicle->id, 'trip_code' => 'TTR-DEMO-001', 'driver_name' => 'Sunil Kumara', 'status' => 'ACTIVE', 'origin' => 'Mirissa', 'destination' => 'Colombo', 'estimated_distance_km' => 150, 'started_at' => now()->subHours(3)]);
         $transportChecklist = app(TransportChecklistService::class)->initialize($transport);
         $transportChecklist->items()->update(['is_completed' => true, 'completed_by' => $users['TRANSPORTER']->id, 'completed_at' => $transport->started_at]);
         $transportChecklist->update(['completed_by' => $users['TRANSPORTER']->id, 'completed_at' => $transport->started_at]);

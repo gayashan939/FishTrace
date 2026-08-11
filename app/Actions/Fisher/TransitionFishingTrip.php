@@ -34,7 +34,7 @@ class TransitionFishingTrip
             }
             $locked->update(array_merge($attributes, ['status' => $to]));
 
-            return $locked->fresh(['boat', 'landingSite']) ?? $locked;
+            return $locked->fresh(['boat', 'landingSite', 'crewMembers']) ?? $locked;
         });
     }
 }

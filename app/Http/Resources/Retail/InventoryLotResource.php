@@ -26,6 +26,8 @@ class InventoryLotResource extends JsonResource
             'available_packages' => $lot->available_packages,
             'reserved_packages' => $lot->reserved_packages,
             'sold_packages' => $lot->sold_packages,
+            'default_unit_price' => $lot->default_unit_price,
+            'low_stock_threshold_kg' => $lot->low_stock_threshold_kg,
             'expires_at' => $lot->expires_at,
             'created_at' => $lot->created_at,
             'updated_at' => $lot->updated_at,

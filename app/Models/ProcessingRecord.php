@@ -12,7 +12,7 @@ class ProcessingRecord extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['fish_batch_id', 'batch_intake_id', 'organization_id', 'created_by', 'processing_type_id', 'status', 'input_weight_kg', 'output_weight_kg', 'waste_weight_kg', 'notes', 'started_at', 'completed_at'];
+    protected $fillable = ['fish_batch_id', 'batch_intake_id', 'organization_id', 'created_by', 'processing_type_id', 'operator_name', 'processing_area', 'status', 'input_weight_kg', 'output_weight_kg', 'waste_weight_kg', 'notes', 'started_at', 'completed_at'];
 
     protected function casts(): array
     {

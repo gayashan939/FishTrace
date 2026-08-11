@@ -23,7 +23,7 @@ class CatchRecordController extends Controller
     {
         $this->authorize('viewAny', CatchRecord::class);
         $filters = $request->validated();
-        $page = $operations->catches($request->user(), (int) ($filters['per_page'] ?? 20));
+        $page = $operations->catches($request->user(), (int) ($filters['per_page'] ?? 20), $filters);
         $page->setCollection(CatchRecordResource::collection($page->getCollection())->collection);
 
         return ApiResponse::data($page);

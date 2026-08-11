@@ -8,12 +8,14 @@ use App\Actions\Auth\CompletePasswordReset;
 use App\Actions\Auth\LogoutAllTokens;
 use App\Actions\Auth\LogoutCurrentToken;
 use App\Actions\Auth\RequestPasswordReset;
+use App\Actions\Auth\UpdateAuthenticatedProfile;
 use App\Actions\Auth\VerifyPasswordResetOtp;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Requests\Auth\VerifyPasswordResetOtpRequest;
 use App\Http\Resources\UserResource;
 use App\Support\ApiResponse;
@@ -34,6 +36,11 @@ class AuthController extends Controller
         $request->user()->loadMissing(['roles', 'organizations']);
 
         return ApiResponse::data((new UserResource($request->user()))->resolve($request));
+    }
+
+    public function updateProfile(UpdateProfileRequest $request, UpdateAuthenticatedProfile $action): JsonResponse
+    {
+        return ApiResponse::data(new UserResource($action->execute($request->user(), $request->validated())));
     }
 
     public function logout(Request $request, LogoutCurrentToken $action): JsonResponse

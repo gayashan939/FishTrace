@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Processor\ProcessorBatchDirectoryRequest;
 use App\Http\Requests\Processor\ReceiveBatchRequest;
 use App\Http\Requests\Processor\RejectBatchRequest;
+use App\Http\Requests\Processor\ResolveProcessorBatchRequest;
 use App\Http\Resources\Fisher\FishBatchResource;
 use App\Http\Resources\Processor\BatchIntakeResource;
 use App\Models\FishBatch;
@@ -28,6 +29,14 @@ class ProcessorBatchController extends Controller
         $page->setCollection(FishBatchResource::collection($page->getCollection())->collection);
 
         return ApiResponse::data($page);
+    }
+
+    public function resolve(ResolveProcessorBatchRequest $request, ProcessorBatchQuery $batches): JsonResponse
+    {
+        $batch = $batches->resolveIncoming((string) $request->validated('code'));
+        abort_if($batch === null, 404, 'No incoming batch matches this QR code.');
+
+        return ApiResponse::data(new FishBatchResource($batch));
     }
 
     public function history(ProcessorBatchDirectoryRequest $request, ProcessorBatchQuery $batches): JsonResponse

@@ -49,7 +49,7 @@ class ExportPostmanCollection extends Command
             'id' => 'fishtrace-local-environment',
             'name' => 'FishTrace Local',
             'values' => [
-                ['key' => 'baseUrl', 'value' => 'http://localhost:8000', 'enabled' => true],
+                ['key' => 'baseUrl', 'value' => 'http://localhost:8002', 'enabled' => true],
                 ['key' => 'accessToken', 'value' => '', 'enabled' => true],
                 ['key' => 'demoEmail', 'value' => 'admin@fishtrace.demo', 'enabled' => true],
                 ['key' => 'demoPassword', 'value' => 'FishTrace@2026', 'enabled' => true],

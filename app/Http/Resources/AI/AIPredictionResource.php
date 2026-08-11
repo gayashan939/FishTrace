@@ -5,6 +5,7 @@ namespace App\Http\Resources\AI;
 use App\Models\AIPrediction;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 class AIPredictionResource extends JsonResource
@@ -26,7 +27,7 @@ class AIPredictionResource extends JsonResource
             'recommendation' => $prediction->recommendation,
             'model_version' => $prediction->model_version,
             'provider' => $prediction->provider,
-            'predicted_at' => $prediction->predicted_at,
+            'predicted_at' => Carbon::parse($prediction->predicted_at)->setTimezone(config('app.timezone'))->toIso8601String(),
             'decision_support' => true,
             'disclaimer' => 'Decision support only; apply the required quality and food-safety controls.',
         ];

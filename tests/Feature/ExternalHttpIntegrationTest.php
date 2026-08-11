@@ -50,8 +50,8 @@ class ExternalHttpIntegrationTest extends TestCase
         Notification::fake();
         Http::fake(['https://ai.example.test/predict' => Http::response([
             'riskLevel' => 'HIGH',
-            'confidence' => 0.94,
-            'probabilities' => ['LOW' => 0.01, 'MEDIUM' => 0.05, 'HIGH' => 0.94],
+            'confidence' => '0.94',
+            'probabilities' => ['LOW' => '0.01', 'MEDIUM' => '0.05', 'HIGH' => '0.94'],
             'recommendation' => 'Inspect immediately.',
             'modelVersion' => '2026.08',
         ])]);
@@ -62,6 +62,8 @@ class ExternalHttpIntegrationTest extends TestCase
 
         $this->assertSame('HIGH', $prediction->risk_level);
         $this->assertSame('http', $prediction->provider);
+        $this->assertSame(0.94, $prediction->confidence);
+        $this->assertSame(['LOW' => 0.01, 'MEDIUM' => 0.05, 'HIGH' => 0.94], $prediction->probabilities);
         $this->assertDatabaseHas('ai_prediction_inputs', ['ai_prediction_id' => $prediction->id]);
         Http::assertSent(function ($request): bool {
             return $request->url() === 'https://ai.example.test/predict'

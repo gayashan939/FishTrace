@@ -1,0 +1,15 @@
+{
+  "data": {
+    "id": "fe79915b-b7cb-4ace-851b-bc7081b8cae5",
+    "fishing_trip_id": "0aa9f571-f819-4fba-b440-faa594a1a321",
+    "status": "AVAILABLE_FOR_PROCESSING",
+    "product_type": "WHOLE",
+    "total_weight_kg": "40.000",
+    "fish_count": 2,
+    "quality_grade": "A",
+    "storage_temperature_celsius": "2.00",
+    "ice_type": "FLAKE_ICE",
+    "ice_amount_kg": "25.000",
+    "landing_site_name": "Kochi Port"
+  }
+}

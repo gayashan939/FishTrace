@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Transport;
 
 use App\Http\Resources\Fisher\FishBatchResource;
+use App\Models\SensorReading;
 use App\Models\TransportTrip;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -24,8 +25,14 @@ class TransportTripResource extends JsonResource
             'status' => $trip->status,
             'origin' => $trip->origin,
             'destination' => $trip->destination,
+            'estimated_distance_km' => $trip->estimated_distance_km,
+            'product_temperature_celsius' => $this->when(
+                $trip->relationLoaded('latestReading'),
+                fn () => $this->productTemperature($trip),
+            ),
             'scheduled_at' => $trip->scheduled_at,
             'started_at' => $trip->started_at,
+            'arrived_at' => $trip->arrived_at,
             'completed_at' => $trip->completed_at,
             'created_at' => $trip->created_at,
             'updated_at' => $trip->updated_at,
@@ -45,5 +52,12 @@ class TransportTripResource extends JsonResource
         }
 
         return $this->resource;
+    }
+
+    private function productTemperature(TransportTrip $trip): mixed
+    {
+        $reading = $trip->getRelation('latestReading');
+
+        return $reading instanceof SensorReading ? $reading->product_temperature : null;
     }
 }

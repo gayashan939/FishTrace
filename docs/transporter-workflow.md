@@ -10,6 +10,8 @@ Every trip receives five mandatory checklist items covering the vehicle, refrige
 
 During transport, operators can record incidents and inspect bounded reading history, latest state, and an aggregate sensor summary. Delivery confirmation requires receiver details before final completion. Confirmation and incidents create privacy-safe traceability milestones; receiver contact and incident descriptions remain private. Completion ends the assignment, removes live-trip/member access, retains permanent MySQL telemetry, and records the completed milestone. Draft/ready trips can instead remove batches/devices or be cancelled with a reason.
 
+The transporter explicitly marks an active trip as arrived before receiver confirmation. Arrival is idempotent, timestamped, audited, and added to every linked batch timeline. Delivery photos and the receiver signature are uploaded as private `DELIVERY_IMAGE` and `DELIVERY_SIGNATURE` assets linked to the transport trip; confirmation cannot proceed from the mobile flow until both forms of evidence are captured.
+
 Incident and delivery-confirmation actions lock the parent trip and recheck `ACTIVE` inside their transaction. Late writes after completion or cancellation are rejected without creating operational or traceability records.
 
 `php artisan fishtrace:reconcile-firebase-assignments` retries bounded `PENDING`/`FAILED` mirrors and closures. It is scheduled every five minutes with an overlap lock.

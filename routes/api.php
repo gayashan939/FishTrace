@@ -22,12 +22,14 @@ use App\Http\Controllers\Api\V1\PackageLabelController;
 use App\Http\Controllers\Api\V1\ProcessingRecordController;
 use App\Http\Controllers\Api\V1\ProcessingStepController;
 use App\Http\Controllers\Api\V1\ProcessorBatchController;
+use App\Http\Controllers\Api\V1\ProcessorReferenceDataController;
 use App\Http\Controllers\Api\V1\QualityInspectionController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\RetailAlertController;
 use App\Http\Controllers\Api\V1\RetailInventoryController;
 use App\Http\Controllers\Api\V1\RetailReportController;
 use App\Http\Controllers\Api\V1\RetailSaleController;
+use App\Http\Controllers\Api\V1\SupportIssueController;
 use App\Http\Controllers\Api\V1\TransportTripController;
 use App\Http\Controllers\Api\V1\VehicleController;
 use App\Http\Controllers\Consumer\TraceController;
@@ -44,10 +46,12 @@ Route::prefix('v1')->group(function (): void {
 
     Route::middleware(['auth:sanctum', 'throttle:authenticated-api'])->group(function (): void {
         Route::get('auth/me', [AuthController::class, 'me']);
+        Route::match(['put', 'patch'], 'auth/profile', [AuthController::class, 'updateProfile']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::post('auth/logout-all', [AuthController::class, 'logoutAll']);
         Route::post('auth/change-password', [AuthController::class, 'changePassword']);
         Route::post('firebase/session', FirebaseSessionController::class);
+        Route::post('support/issues', [SupportIssueController::class, 'store']);
 
         Route::post('files', [FileAssetController::class, 'store']);
         Route::get('files/{file}', [FileAssetController::class, 'show'])->name('files.show');
@@ -117,7 +121,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('batches/{batch}/children', [BatchSplitController::class, 'index']);
 
         Route::get('processor/dashboard', [ProcessorBatchController::class, 'dashboard']);
+        Route::get('processor/reference-data', ProcessorReferenceDataController::class);
         Route::get('processor/incoming-batches', [ProcessorBatchController::class, 'incoming']);
+        Route::get('processor/resolve-batch', [ProcessorBatchController::class, 'resolve']);
         Route::get('processor/history', [ProcessorBatchController::class, 'history']);
         Route::get('processor/batches/{batch}', [ProcessorBatchController::class, 'show']);
         Route::post('processor/batches/{batch}/accept', [ProcessorBatchController::class, 'accept']);
@@ -147,6 +153,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('retail/sales/{sale}', [RetailSaleController::class, 'show']);
 
         Route::get('retailer/dashboard', [RetailInventoryController::class, 'dashboard']);
+        Route::get('retailer/resolve-label', [RetailInventoryController::class, 'resolveLabel']);
         Route::get('retailer/receipts', [RetailInventoryController::class, 'receipts']);
         Route::post('retailer/receipts', [RetailInventoryController::class, 'storeReceipt']);
         Route::get('retailer/receipts/{receipt}', [RetailInventoryController::class, 'receipt']);
@@ -165,6 +172,8 @@ Route::prefix('v1')->group(function (): void {
 
         Route::apiResource('vehicles', VehicleController::class);
         Route::get('transporter/dashboard', [TransportTripController::class, 'dashboard']);
+        Route::get('transporter/available-batches', [TransportTripController::class, 'availableBatches']);
+        Route::get('transporter/resolve-batch', [TransportTripController::class, 'resolveBatch']);
         Route::get('transport-trips', [TransportTripController::class, 'index']);
         Route::post('transport-trips', [TransportTripController::class, 'store']);
         Route::get('transport-trips/{transportTrip}', [TransportTripController::class, 'show']);
@@ -176,6 +185,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('transport-trips/{transportTrip}/checklist', [TransportTripController::class, 'checklist']);
         Route::post('transport-trips/{transportTrip}/checklist', [TransportTripController::class, 'updateChecklist']);
         Route::post('transport-trips/{transportTrip}/start', [TransportTripController::class, 'start']);
+        Route::post('transport-trips/{transportTrip}/arrive', [TransportTripController::class, 'arrive']);
         Route::post('transport-trips/{transportTrip}/complete', [TransportTripController::class, 'complete']);
         Route::post('transport-trips/{transportTrip}/cancel', [TransportTripController::class, 'cancel']);
         Route::post('transport-trips/{transportTrip}/incidents', [TransportTripController::class, 'incident']);

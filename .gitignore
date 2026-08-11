@@ -12,6 +12,7 @@
 /.vscode
 /.zed
 /auth.json
+/fishtrace-*-firebase-adminsdk-*.json
 /node_modules
 /public/build
 /public/fonts-manifest.dev.json

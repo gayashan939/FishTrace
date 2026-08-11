@@ -10,41 +10,51 @@ use Kreait\Firebase\Factory;
 
 class FirebaseAdminClient implements FirebaseRealtimeClient, FirebaseTokenService
 {
-    private Auth $auth;
+    private ?Auth $auth = null;
 
-    private Database $database;
+    private ?Database $database = null;
 
-    public function __construct()
+    private function factory(): Factory
     {
-        $factory = (new Factory)->withServiceAccount((string) config('fishtrace.firebase.credentials'))->withDatabaseUri((string) config('fishtrace.firebase.database_url'));
-        $this->auth = $factory->createAuth();
-        $this->database = $factory->createDatabase();
+        return (new Factory)
+            ->withServiceAccount((string) config('fishtrace.firebase.credentials'))
+            ->withDatabaseUri((string) config('fishtrace.firebase.database_url'));
+    }
+
+    private function auth(): Auth
+    {
+        return $this->auth ??= $this->factory()->createAuth();
+    }
+
+    private function database(): Database
+    {
+        return $this->database ??= $this->factory()->createDatabase();
     }
 
     public function customToken(string $uid, array $claims): string
     {
-        return $this->auth->createCustomToken($uid, $claims)->toString();
+        return $this->auth()->createCustomToken($uid, $claims)->toString();
     }
 
     public function set(string $path, array $value): void
     {
-        $this->database->getReference($path)->set($value);
+        $this->database()->getReference($path)->set($value);
     }
 
     public function remove(string $path): void
     {
-        $this->database->getReference($path)->remove();
+        $this->database()->getReference($path)->remove();
     }
 
     public function get(string $path): array
     {
-        $value = $this->database->getReference($path)->getValue();
+        $value = $this->database()->getReference($path)->getValue();
 
         return is_array($value) ? $value : [];
     }
 
     public function markSynchronized(string $deviceUid, string $messageId, array $metadata): void
     {
-        $this->database->getReference("telemetry/{$deviceUid}/{$messageId}")->update($metadata);
+        $this->database()->getReference("telemetry/{$deviceUid}/{$messageId}")->update($metadata);
     }
 }

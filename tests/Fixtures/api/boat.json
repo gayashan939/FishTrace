@@ -1,0 +1,18 @@
+{
+  "data": {
+    "id": "a8f5b4c2-6f06-4fb9-b536-696e642e5f10",
+    "organization_id": "0a3006ea-fbb8-4af1-a2ef-aa01e3142f12",
+    "owner_id": "b164774f-322e-45bc-8476-1dcac4f199da",
+    "registration_number": "MOB-BOAT-001",
+    "name": "Sea Light",
+    "type": "LONG_LINER",
+    "capacity_kg": null,
+    "length_meters": "9.80",
+    "engine_details": "Inboard diesel",
+    "home_port": "Kochi",
+    "is_active": true,
+    "created_at": "2026-08-03T06:30:00.000000Z",
+    "updated_at": "2026-08-03T06:30:00.000000Z"
+  },
+  "meta": {"request_id": "a99f1cb9-4495-47cd-a0d2-a9c619134168"}
+}

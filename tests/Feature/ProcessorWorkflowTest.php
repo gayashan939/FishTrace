@@ -59,7 +59,8 @@ class ProcessorWorkflowTest extends TestCase
 
         $this->getJson('/api/v1/processor/incoming-batches')->assertOk()->assertJsonFragment(['batch_code' => $batch->batch_code]);
         $this->postJson("/api/v1/processor/batches/{$batch->id}/accept", ['received_weight_kg' => 48])->assertCreated()->assertJsonPath('data.status', 'ACCEPTED');
-        $record = $this->postJson('/api/v1/processing-records', ['fish_batch_id' => $batch->id, 'input_weight_kg' => 48])->assertCreated()->assertJsonPath('data.status', 'IN_PROGRESS')->json('data');
+        $record = $this->postJson('/api/v1/processing-records', ['fish_batch_id' => $batch->id, 'input_weight_kg' => 48, 'operator_name' => 'Alex Johnson', 'processing_area' => 'Line 2 – High Care'])->assertCreated()->assertJsonPath('data.status', 'IN_PROGRESS')->assertJsonPath('data.operator_name', 'Alex Johnson')->assertJsonPath('data.processing_area', 'Line 2 – High Care')->json('data');
+        $this->assertDatabaseHas('processing_records', ['id' => $record['id'], 'operator_name' => 'Alex Johnson', 'processing_area' => 'Line 2 – High Care']);
         $steps = collect($record['steps'])->keyBy('type');
 
         $this->postJson("/api/v1/processing-records/{$record['id']}/steps/{$steps['GRADING']['id']}/start")->assertConflict();
@@ -75,8 +76,8 @@ class ProcessorWorkflowTest extends TestCase
             $this->postJson("/api/v1/processing-records/{$record['id']}/steps/{$stepId}/complete", ['measurements' => $measurements[$type]])->assertOk()->assertJsonPath('data.status', 'COMPLETED');
         }
 
-        $gradeId = \DB::table('quality_grades')->value('id');
-        $inspection = $this->postJson('/api/v1/quality-inspections', ['processing_record_id' => $record['id'], 'result' => 'PASSED', 'quality_grade_id' => $gradeId, 'product_temperature' => -1.8, 'ph_level' => 5.9, 'appearance' => 'Bright and firm', 'odor' => 'Fresh'])->assertCreated()->assertJsonPath('data.result', 'PASSED');
+        $grade = \DB::table('quality_grades')->first(['id', 'code']);
+        $inspection = $this->postJson('/api/v1/quality-inspections', ['processing_record_id' => $record['id'], 'result' => 'PASSED', 'quality_grade' => $grade->code, 'product_temperature' => -1.8, 'ph_level' => 5.9, 'appearance' => 'Bright and firm', 'odor' => 'Fresh'])->assertCreated()->assertJsonPath('data.result', 'PASSED')->assertJsonPath('data.quality_grade_id', $grade->id);
         $this->assertDatabaseHas('processing_records', ['id' => $record['id'], 'status' => 'COMPLETED']);
         $this->assertDatabaseHas('fish_batches', ['id' => $batch->id, 'status' => 'PROCESSED', 'total_weight_kg' => 44]);
 
@@ -91,6 +92,20 @@ class ProcessorWorkflowTest extends TestCase
         $this->get("/api/v1/package-labels/{$labelId}/print")->assertOk()->assertSee('FishTrace verified package');
         $this->getJson("/api/v1/batches/{$batch->id}/children")->assertOk()->assertJsonCount(2, 'data.data');
         $this->postJson("/api/v1/batches/{$batch->id}/split", ['children' => [['weight_kg' => 1, 'package_count' => 1], ['weight_kg' => 1, 'package_count' => 1]]])->assertUnprocessable();
+    }
+
+    public function test_processor_resolves_an_available_batch_from_its_trace_url(): void
+    {
+        $this->seed();
+        $processor = User::where('email', 'processor@fishtrace.demo')->firstOrFail();
+        Sanctum::actingAs($processor);
+        $batch = $this->availableBatch();
+        QrCode::query()->create(['fish_batch_id' => $batch->id, 'public_token' => 'processor-scan-token']);
+
+        $this->getJson('/api/v1/processor/resolve-batch?code='.urlencode(url('/trace/processor-scan-token')))
+            ->assertOk()
+            ->assertJsonPath('data.id', $batch->id)
+            ->assertJsonPath('data.batch_code', $batch->batch_code);
     }
 
     public function test_rejection_requires_reason_and_does_not_claim_batch(): void

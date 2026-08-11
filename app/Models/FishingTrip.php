@@ -13,11 +13,11 @@ class FishingTrip extends Model
 {
     use BelongsToOrganization, HasUuids;
 
-    protected $fillable = ['organization_id', 'fisher_id', 'boat_id', 'landing_site_id', 'trip_code', 'status', 'general_catch_area', 'departed_at', 'returned_at'];
+    protected $fillable = ['organization_id', 'fisher_id', 'boat_id', 'landing_site_id', 'trip_code', 'client_record_id', 'status', 'general_catch_area', 'planned_departure_at', 'expected_duration_hours', 'fishing_area_latitude', 'fishing_area_longitude', 'notes', 'departed_at', 'returned_at'];
 
     protected function casts(): array
     {
-        return ['status' => FishingTripStatus::class, 'departed_at' => 'datetime', 'returned_at' => 'datetime'];
+        return ['status' => FishingTripStatus::class, 'planned_departure_at' => 'datetime', 'expected_duration_hours' => 'decimal:2', 'fishing_area_latitude' => 'decimal:7', 'fishing_area_longitude' => 'decimal:7', 'departed_at' => 'datetime', 'returned_at' => 'datetime'];
     }
 
     public function boat(): BelongsTo
@@ -38,6 +38,11 @@ class FishingTrip extends Model
     public function catches(): HasMany
     {
         return $this->hasMany(CatchRecord::class);
+    }
+
+    public function crewMembers(): HasMany
+    {
+        return $this->hasMany(FishingTripCrewMember::class);
     }
 
     public function hasStatus(FishingTripStatus $status): bool

@@ -10,9 +10,11 @@ use App\Models\BlockchainTransaction;
 use App\Models\BlockchainVerification;
 use App\Models\FishBatch;
 use App\Models\IotDevice;
+use App\Models\SensorReading;
 use App\Models\TraceabilityEvent;
 use App\Models\TransportTrip;
 use App\Models\User;
+use App\Services\AI\FeatureAggregator;
 use App\Services\AI\SpoilagePredictionService;
 use App\Services\IoT\TelemetryImporter;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -27,6 +29,39 @@ class AIBlockchainContractTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_ai_features_preserve_missing_telemetry_and_measure_elapsed_violation_minutes(): void
+    {
+        $this->seed();
+        $batch = FishBatch::query()->where('batch_code', 'FT-DEMO-0001')->firstOrFail();
+        $trip = TransportTrip::query()->whereHas('batches', fn ($query) => $query->whereKey($batch->id))->firstOrFail();
+        $device = IotDevice::query()->firstOrFail();
+        SensorReading::query()->where('transport_trip_id', $trip->id)->delete();
+
+        $missing = app(FeatureAggregator::class)->forBatch($batch);
+        $this->assertFalse($missing['hasTemperatureTelemetry']);
+        $this->assertSame(0, $missing['temperatureReadingCount']);
+        $this->assertNull($missing['currentProductTemperature']);
+        $this->assertNull($missing['airTemperature']);
+
+        $start = now()->startOfMinute();
+        foreach ([[0, 5.0], [10, 6.0], [25, 3.0]] as [$minutes, $temperature]) {
+            SensorReading::query()->create([
+                'message_id' => "ai-feature-{$minutes}",
+                'iot_device_id' => $device->id,
+                'transport_trip_id' => $trip->id,
+                'product_temperature' => $temperature,
+                'recorded_at' => $start->copy()->addMinutes($minutes),
+                'imported_at' => now(),
+            ]);
+        }
+
+        $features = app(FeatureAggregator::class)->forBatch($batch);
+        $this->assertTrue($features['hasTemperatureTelemetry']);
+        $this->assertSame(3, $features['temperatureReadingCount']);
+        $this->assertSame(25, $features['timeAboveLimitMinutes']);
+        $this->assertSame(2, $features['temperatureViolationCount']);
+    }
+
     public function test_ai_api_is_whitelisted_and_marks_predictions_as_decision_support(): void
     {
         $this->seed();
@@ -40,6 +75,12 @@ class AIBlockchainContractTest extends TestCase
             ->assertJsonPath('data.id', $prediction->id)
             ->assertJsonPath('data.decision_support', true)
             ->assertJsonStructure(['data' => ['risk_level', 'confidence', 'probabilities', 'recommendation', 'model_version', 'provider', 'predicted_at', 'disclaimer']]);
+        $this->assertIsFloat($latest->json('data.confidence'));
+        foreach (['LOW', 'MEDIUM', 'HIGH'] as $riskLevel) {
+            $this->assertIsFloat($latest->json("data.probabilities.{$riskLevel}"));
+        }
+        $this->assertSame(['LOW', 'MEDIUM', 'HIGH'], array_keys($latest->json('data.probabilities')));
+        $this->assertNotNull(\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $latest->json('data.predicted_at')));
         foreach (['features', 'requested_by', 'ai_prediction_inputs'] as $privateField) {
             $this->assertStringNotContainsString($privateField, $latest->getContent());
         }

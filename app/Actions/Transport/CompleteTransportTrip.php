@@ -20,6 +20,9 @@ class CompleteTransportTrip
     {
         [$completedTrip, $assignment] = DB::transaction(function () use ($user, $trip): array {
             $locked = TransportTrip::query()->lockForUpdate()->findOrFail($trip->id);
+            if ($locked->hasStatus(TransportTripStatus::COMPLETED)) {
+                return [$locked, null];
+            }
             abort_unless($locked->hasStatus(TransportTripStatus::ACTIVE), 409, 'Only an active transport trip can be completed.');
             abort_unless($locked->deliveryConfirmation()->exists(), 409, 'Record receiver delivery confirmation before completing the trip.');
             $assignment = DeviceAssignment::query()->where('transport_trip_id', $locked->id)->where('status', 'ACTIVE')->lockForUpdate()->first();

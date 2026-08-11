@@ -8,9 +8,17 @@ use Illuminate\Http\Response;
 
 class QrCodeRenderer
 {
+    public function traceSvg(string $publicToken): string
+    {
+        return (new SvgWriter)
+            ->write(new QrCode(url('/trace/'.$publicToken)))
+            ->getString();
+    }
+
     public function trace(string $publicToken): Response
     {
-        $result = (new SvgWriter)->write(new QrCode(url('/trace/'.$publicToken)));
+        $writer = new SvgWriter;
+        $result = $writer->write(new QrCode(url('/trace/'.$publicToken)));
 
         return response($result->getString(), 200, [
             'Content-Type' => $result->getMimeType(),

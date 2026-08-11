@@ -31,7 +31,7 @@ class FishingTripController extends Controller
     {
         $this->authorize('viewAny', FishingTrip::class);
         $filters = $request->validated();
-        $page = $operations->trips($request->user(), (int) ($filters['per_page'] ?? 20));
+        $page = $operations->trips($request->user(), (int) ($filters['per_page'] ?? 20), $filters);
         $page->setCollection(FishingTripResource::collection($page->getCollection())->collection);
 
         return ApiResponse::data($page);

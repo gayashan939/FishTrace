@@ -13,11 +13,11 @@ class Boat extends Model
 {
     use BelongsToOrganization, HasUuids, SoftDeletes;
 
-    protected $fillable = ['organization_id', 'owner_id', 'registration_number', 'name', 'type', 'capacity_kg', 'is_active'];
+    protected $fillable = ['organization_id', 'owner_id', 'registration_number', 'name', 'type', 'capacity_kg', 'length_meters', 'engine_details', 'home_port', 'is_active'];
 
     protected function casts(): array
     {
-        return ['capacity_kg' => 'decimal:3', 'is_active' => 'boolean'];
+        return ['capacity_kg' => 'decimal:3', 'length_meters' => 'decimal:2', 'is_active' => 'boolean'];
     }
 
     public function owner(): BelongsTo

@@ -20,6 +20,7 @@ class ConfirmTransportDelivery
         $confirmation = DB::transaction(function () use ($user, $trip, $data): DeliveryConfirmation {
             $lockedTrip = TransportTrip::query()->lockForUpdate()->findOrFail($trip->id);
             abort_unless($lockedTrip->hasStatus(TransportTripStatus::ACTIVE), 409, 'Delivery can only be confirmed for an active trip.');
+            abort_unless($lockedTrip->arrived_at !== null, 409, 'Mark the transport trip as arrived before confirming delivery.');
             $confirmation = DeliveryConfirmation::query()->updateOrCreate(
                 ['transport_trip_id' => $lockedTrip->id],
                 $data + ['confirmed_by' => $user->id],

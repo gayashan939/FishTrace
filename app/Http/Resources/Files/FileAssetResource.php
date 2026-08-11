@@ -27,7 +27,7 @@ class FileAssetResource extends JsonResource
             'size_bytes' => $asset->size_bytes,
             'sha256' => $asset->sha256,
             'download_url' => route('files.show', $asset->id),
-            'created_at' => $asset->created_at,
+            'created_at' => $asset->created_at?->toIso8601String(),
         ];
     }
 }

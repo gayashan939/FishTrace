@@ -13,11 +13,11 @@ class InventoryLot extends Model
 {
     use BelongsToOrganization, HasUuids;
 
-    protected $fillable = ['retail_receipt_id', 'package_label_id', 'fish_batch_id', 'organization_id', 'retail_location_id', 'status', 'total_packages', 'available_packages', 'reserved_packages', 'sold_packages', 'expires_at'];
+    protected $fillable = ['retail_receipt_id', 'package_label_id', 'fish_batch_id', 'organization_id', 'retail_location_id', 'status', 'total_packages', 'available_packages', 'reserved_packages', 'sold_packages', 'default_unit_price', 'low_stock_threshold_kg', 'expires_at'];
 
     protected function casts(): array
     {
-        return ['status' => InventoryStatus::class, 'expires_at' => 'datetime'];
+        return ['status' => InventoryStatus::class, 'default_unit_price' => 'decimal:2', 'low_stock_threshold_kg' => 'decimal:3', 'expires_at' => 'datetime'];
     }
 
     public function receipt(): BelongsTo

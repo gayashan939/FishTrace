@@ -1,1 +1,34 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{{ $label->label_code }}</title><style>body{font-family:Arial,sans-serif;margin:24px}.label{width:90mm;border:2px solid #073b3a;padding:18px}.brand{color:#087f8c;font-weight:700}.code{font-size:24px;font-weight:700;margin:12px 0}dl{display:grid;grid-template-columns:1fr 1fr;gap:10px}dt{font-size:11px;color:#64748b;text-transform:uppercase}dd{margin:2px 0 0;font-weight:600}@media print{body{margin:0}.label{break-inside:avoid}}</style></head><body><main class="label"><p class="brand">FishTrace verified package</p><p class="code">{{ $label->label_code }}</p><dl><div><dt>Batch</dt><dd>{{ $batch->batch_code }}</dd></div><div><dt>Species</dt><dd>{{ $batch->species->common_name }}</dd></div><div><dt>Package weight</dt><dd>{{ $label->package_weight_kg }} kg</dd></div><div><dt>Packages</dt><dd>{{ $label->package_count }}</dd></div></dl><p>Trace: {{ url('/trace/'.$label->public_token) }}</p></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ $label->label_code }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; }
+        .label { width: 90mm; border: 2px solid #073b3a; padding: 18px; }
+        .brand { color: #087f8c; font-weight: 700; }
+        .code { font-size: 24px; font-weight: 700; margin: 12px 0; }
+        .qr { display: flex; justify-content: center; margin: 14px 0; }
+        .qr svg { width: 42mm; height: 42mm; }
+        dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        dt { font-size: 11px; color: #64748b; text-transform: uppercase; }
+        dd { margin: 2px 0 0; font-weight: 600; }
+        .trace { overflow-wrap: anywhere; font-size: 10px; }
+        @media print { body { margin: 0; } .label { break-inside: avoid; } }
+    </style>
+</head>
+<body>
+<main class="label">
+    <p class="brand">FishTrace verified package</p>
+    <p class="code">{{ $label->label_code }}</p>
+    <div class="qr">{!! $qrSvg !!}</div>
+    <dl>
+        <div><dt>Batch</dt><dd>{{ $batch->batch_code }}</dd></div>
+        <div><dt>Species</dt><dd>{{ $batch->species->common_name }}</dd></div>
+        <div><dt>Package weight</dt><dd>{{ $label->package_weight_kg }} kg</dd></div>
+        <div><dt>Packages</dt><dd>{{ $label->package_count }}</dd></div>
+    </dl>
+    <p class="trace">Trace: {{ url('/trace/'.$label->getRawOriginal('public_token')) }}</p>
+</main>
+</body>
+</html>

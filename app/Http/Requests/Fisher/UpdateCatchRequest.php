@@ -19,6 +19,10 @@ class UpdateCatchRequest extends FormRequest
             'fishing_gear_type_id' => ['nullable', 'uuid', Rule::exists('fishing_gear_types', 'id')->where('is_active', true)],
             'weight_kg' => ['required', 'numeric', 'gt:0'],
             'quantity' => ['required', 'integer', 'min:1'],
+            'condition' => ['nullable', Rule::in(['EXCELLENT', 'GOOD', 'FAIR'])],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
+            'notes' => ['nullable', 'string', 'max:2000'],
             'caught_at' => ['required', 'date'],
             'client_created_at' => ['nullable', 'date'],
         ];

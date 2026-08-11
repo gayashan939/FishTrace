@@ -37,8 +37,8 @@ class FisherApiCompletionTest extends TestCase
         $this->seed();
         $fisher = User::query()->where('email', 'fisher@fishtrace.demo')->firstOrFail();
         Sanctum::actingAs($fisher);
-        $firstBoat = $this->postJson('/api/v1/boats', ['registration_number' => 'EDIT-BOAT-1', 'name' => 'First Boat', 'capacity_kg' => 200])->assertCreated()->json('data');
-        $secondBoat = $this->postJson('/api/v1/boats', ['registration_number' => 'EDIT-BOAT-2', 'name' => 'Second Boat', 'capacity_kg' => 250])->assertCreated()->json('data');
+        $firstBoat = $this->postJson('/api/v1/boats', ['registration_number' => 'EDIT-BOAT-1', 'name' => 'First Boat', 'capacity_kg' => 200, 'type' => 'LONG_LINER', 'length_meters' => 11.2, 'engine_details' => 'First engine', 'home_port' => 'Kochi'])->assertCreated()->json('data');
+        $secondBoat = $this->postJson('/api/v1/boats', ['registration_number' => 'EDIT-BOAT-2', 'name' => 'Second Boat', 'capacity_kg' => 250, 'type' => 'GILLNETTER', 'length_meters' => 10.8, 'engine_details' => 'Second engine', 'home_port' => 'Galle'])->assertCreated()->json('data');
         $trip = $this->postJson('/api/v1/fishing-trips', ['boat_id' => $firstBoat['id'], 'general_catch_area' => 'Original area'])->assertCreated()->json('data');
 
         $this->putJson('/api/v1/fishing-trips/'.$trip['id'], ['boat_id' => $secondBoat['id'], 'general_catch_area' => 'Updated area'])->assertOk()->assertJsonPath('data.boat_id', $secondBoat['id'])->assertJsonPath('data.general_catch_area', 'Updated area')->assertJsonPath('data.status', 'DRAFT');
@@ -113,7 +113,7 @@ class FisherApiCompletionTest extends TestCase
     {
         $fisher = User::query()->where('email', 'fisher@fishtrace.demo')->firstOrFail();
         Sanctum::actingAs($fisher);
-        $boat = $this->postJson('/api/v1/boats', ['registration_number' => 'ACTIVE-'.str()->upper(str()->random(8)), 'name' => 'Active Catch Boat', 'capacity_kg' => 400])->assertCreated()->json('data');
+        $boat = $this->postJson('/api/v1/boats', ['registration_number' => 'ACTIVE-'.str()->upper(str()->random(8)), 'name' => 'Active Catch Boat', 'capacity_kg' => 400, 'type' => 'DAY_BOAT', 'length_meters' => 8.5, 'engine_details' => 'Catch engine', 'home_port' => 'Matara'])->assertCreated()->json('data');
         $trip = $this->postJson('/api/v1/fishing-trips', ['boat_id' => $boat['id'], 'general_catch_area' => 'Southern waters'])->assertCreated()->json('data');
         $this->postJson('/api/v1/fishing-trips/'.$trip['id'].'/start')->assertOk();
         $species = FishSpecies::query()->firstOrFail();

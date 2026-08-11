@@ -19,6 +19,139 @@ components:
       properties:
         error: {type: object}
         meta: {type: object}
+    User:
+      type: object
+      required: [id, name, email, role, organization]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        email: {type: string, format: email}
+        role: {type: string, enum: [ADMIN, FISHER, PROCESSOR, TRANSPORTER, RETAILER]}
+        organization:
+          type: [object, 'null']
+          properties:
+            id: {type: string, format: uuid}
+            name: {type: string}
+            code: {type: string}
+            type: {type: string}
+            is_active: {type: boolean}
+    BoatWrite:
+      type: object
+      required: [registration_number, name, type, length_meters, engine_details, home_port]
+      properties:
+        registration_number: {type: string, maxLength: 50}
+        name: {type: string, maxLength: 120}
+        type: {type: string, enum: [LONG_LINER, GILLNETTER, DAY_BOAT]}
+        capacity_kg: {type: [number, 'null'], exclusiveMinimum: 0}
+        length_meters: {type: number, exclusiveMinimum: 0}
+        engine_details: {type: string, maxLength: 160}
+        home_port: {type: string, maxLength: 120}
+        is_active: {type: boolean}
+    Boat:
+      allOf:
+        - $ref: '#/components/schemas/BoatWrite'
+        - type: object
+          required: [id, organization_id, owner_id, created_at, updated_at]
+          properties:
+            id: {type: string, format: uuid}
+            organization_id: {type: string, format: uuid}
+            owner_id: {type: string, format: uuid}
+            created_at: {type: string, format: date-time}
+            updated_at: {type: string, format: date-time}
+    FishingTripWrite:
+      type: object
+      required: [boat_id]
+      properties:
+        boat_id: {type: string, format: uuid}
+        landing_site_id: {type: [string, 'null'], format: uuid}
+        trip_code: {type: [string, 'null'], maxLength: 50}
+        client_record_id: {type: [string, 'null'], format: uuid}
+        general_catch_area: {type: [string, 'null'], maxLength: 160}
+        planned_departure_at: {type: [string, 'null'], format: date-time}
+        expected_duration_hours: {type: [number, 'null'], exclusiveMinimum: 0}
+        fishing_area_latitude: {type: [number, 'null'], minimum: -90, maximum: 90}
+        fishing_area_longitude: {type: [number, 'null'], minimum: -180, maximum: 180}
+        crew: {type: [array, 'null'], maxItems: 50, items: {type: string, maxLength: 120}}
+        notes: {type: [string, 'null'], maxLength: 2000}
+    CatchWrite:
+      type: object
+      required: [fishing_trip_id, fish_species_id, weight_kg, quantity, caught_at]
+      properties:
+        fishing_trip_id: {type: string, format: uuid}
+        fish_species_id: {type: string, format: uuid}
+        fishing_gear_type_id: {type: [string, 'null'], format: uuid}
+        weight_kg: {type: number, exclusiveMinimum: 0}
+        quantity: {type: integer, minimum: 1}
+        condition: {type: [string, 'null'], enum: [EXCELLENT, GOOD, FAIR, null]}
+        latitude: {type: [number, 'null'], minimum: -90, maximum: 90}
+        longitude: {type: [number, 'null'], minimum: -180, maximum: 180}
+        notes: {type: [string, 'null'], maxLength: 2000}
+        caught_at: {type: string, format: date-time}
+        client_record_id: {type: [string, 'null'], format: uuid}
+        client_created_at: {type: [string, 'null'], format: date-time}
+    BatchWrite:
+      type: object
+      required: [fish_species_id, product_type, catches]
+      properties:
+        fish_species_id: {type: string, format: uuid}
+        product_type: {type: string, maxLength: 100}
+        quality_grade: {type: [string, 'null'], enum: [A, B, C, null]}
+        storage_temperature_celsius: {type: [number, 'null'], minimum: -30, maximum: 10}
+        ice_type: {type: [string, 'null'], enum: [FLAKE_ICE, SLURRY_ICE, BLOCK_ICE, null]}
+        ice_amount_kg: {type: [number, 'null'], exclusiveMinimum: 0}
+        landing_site_name: {type: [string, 'null'], maxLength: 120}
+        notes: {type: [string, 'null'], maxLength: 2000}
+        catches:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [catch_id, weight_kg]
+            properties:
+              catch_id: {type: string, format: uuid}
+              weight_kg: {type: number, exclusiveMinimum: 0}
+    ProcessingRecordWrite:
+      type: object
+      required: [fish_batch_id, input_weight_kg]
+      properties:
+        fish_batch_id: {type: string, format: uuid}
+        processing_type_id: {type: [string, 'null'], format: uuid}
+        operator_name: {type: [string, 'null'], maxLength: 120}
+        processing_area: {type: [string, 'null'], maxLength: 120}
+        input_weight_kg: {type: number, exclusiveMinimum: 0}
+        notes: {type: [string, 'null'], maxLength: 2000}
+    ProcessingStepCompleteWrite:
+      type: object
+      required: [measurements]
+      properties:
+        measurements:
+          type: object
+          description: "Required keys depend on the step type: cleaned_weight_kg, grade, product_temperature, or packaging output/waste/package values."
+        notes: {type: [string, 'null'], maxLength: 2000}
+    VehicleWrite:
+      type: object
+      required: [registration_number, name, capacity_tonnes]
+      properties:
+        registration_number: {type: string, maxLength: 80}
+        name: {type: string, maxLength: 120}
+        vehicle_type: {type: [string, 'null'], maxLength: 80}
+        refrigeration_category: {type: [string, 'null'], maxLength: 80}
+        capacity_tonnes: {type: number, exclusiveMinimum: 0}
+        reefer_unit: {type: [string, 'null'], maxLength: 120}
+        min_temperature_celsius: {type: [number, 'null'], minimum: -40, maximum: 30}
+        max_temperature_celsius: {type: [number, 'null'], minimum: -40, maximum: 40}
+        default_driver_name: {type: [string, 'null'], maxLength: 120}
+        is_active: {type: boolean}
+    TransportTripWrite:
+      type: object
+      required: [vehicle_id, driver_name, origin, destination]
+      properties:
+        vehicle_id: {type: string, format: uuid}
+        driver_name: {type: string, maxLength: 120}
+        origin: {type: string, maxLength: 160}
+        destination: {type: string, maxLength: 160}
+        estimated_distance_km: {type: [number, 'null'], exclusiveMinimum: 0}
+        scheduled_at: {type: [string, 'null'], format: date-time}
     SensorReading:
       type: object
       required: [id, message_id, iot_device_id, transport_trip_id, product_temperature, air_temperature, humidity, latitude, longitude, speed_kph, battery_percentage, signal_strength, door_open, recorded_at, imported_at, reading_age_seconds, device_status]
@@ -40,6 +173,21 @@ components:
         imported_at: {type: [string, 'null'], format: date-time}
         reading_age_seconds: {type: [integer, 'null'], minimum: 0}
         device_status: {type: [string, 'null'], enum: [ACTIVE, INACTIVE, MAINTENANCE, null]}
+    FileAsset:
+      type: object
+      required: [id, category, entity_type, entity_id, original_name, mime_type, extension, size_bytes, sha256, download_url, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        category: {type: string, enum: [BOAT_IMAGE, CATCH_IMAGE, INSPECTION_IMAGE, PROCESSING_IMAGE, BATCH_DOCUMENT, CERTIFICATE, DELIVERY_IMAGE, DELIVERY_SIGNATURE, REPORT_EXPORT]}
+        entity_type: {type: string, enum: [boat, catch_record, quality_inspection, processing_record, fish_batch, transport_trip, retail_receipt, report_export]}
+        entity_id: {type: string, format: uuid}
+        original_name: {type: string}
+        mime_type: {type: string}
+        extension: {type: string}
+        size_bytes: {type: integer, minimum: 1}
+        sha256: {type: string, pattern: '^[a-f0-9]{64}$'}
+        download_url: {type: string, format: uri}
+        created_at: {type: string, format: date-time}
     AIPrediction:
       type: object
       required: [id, fish_batch_id, risk_level, confidence, probabilities, recommendation, model_version, provider, predicted_at, decision_support, disclaimer]
@@ -52,6 +200,7 @@ components:
         probabilities:
           type: object
           required: [LOW, MEDIUM, HIGH]
+          additionalProperties: false
           properties:
             LOW: {type: number, minimum: 0, maximum: 1}
             MEDIUM: {type: number, minimum: 0, maximum: 1}
@@ -62,6 +211,13 @@ components:
         predicted_at: {type: string, format: date-time}
         decision_support: {type: boolean, const: true}
         disclaimer: {type: string}
+    AIPredictionQueued:
+      type: object
+      required: [status, batch_id, decision_support]
+      properties:
+        status: {type: string, const: QUEUED}
+        batch_id: {type: string, format: uuid}
+        decision_support: {type: boolean, const: true}
 paths:
   /auth/login:
     post:
@@ -132,6 +288,23 @@ paths:
         '200': {description: Password changed and sessions revoked}
         '422': {description: Invalid token or password}
         '429': {description: Reset rate limit exceeded}
+  /auth/profile:
+    patch:
+      summary: Update the authenticated user's mobile profile identity
+      security: [{sanctum: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email]
+              properties:
+                name: {type: string, maxLength: 160}
+                email: {type: string, format: email, maxLength: 160}
+      responses:
+        '200': {description: Updated user with primary organization, content: {application/json: {schema: {$ref: '#/components/schemas/User'}}}}
+        '422': {description: Validation error}
   /firebase/session:
     post:
       summary: Issue a Firebase custom token for the authenticated Laravel user
@@ -157,38 +330,111 @@ paths:
     get: {summary: List fixed system roles, security: [{sanctum: []}], responses: {'200': {description: Roles}}}
   /boats:
     get: {summary: List organization boats, security: [{sanctum: []}], responses: {'200': {description: Paginated boats}}}
-    post: {summary: Create an owned boat, security: [{sanctum: []}], responses: {'201': {description: Created}}}
+    post:
+      summary: Create an owned boat using the Flutter mobile contract
+      security: [{sanctum: []}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/BoatWrite'}}}
+      responses: {'201': {description: Created}, '422': {description: Validation error}}
+  /boats/{boat}:
+    put:
+      summary: Update an owned boat using the Flutter mobile contract
+      security: [{sanctum: []}]
+      parameters: [{in: path, name: boat, required: true, schema: {type: string, format: uuid}}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/BoatWrite'}}}
+      responses: {'200': {description: Updated}, '403': {description: Ownership denied}, '422': {description: Validation error}}
   /fisher/dashboard:
     get: {summary: Return fisher-scoped trip, boat, catch, allocation, batch, and recent-trip metrics, security: [{sanctum: []}], responses: {'200': {description: Fisher dashboard}}}
   /fisher/reference-data:
     get: {summary: Return active species, fishing gear types, and landing sites for Fisher forms, security: [{sanctum: []}], responses: {'200': {description: Active Fisher reference data}, '403': {description: Fisher role required}}}
   /fishing-trips:
     get: {summary: List the fisher's organization-scoped trips, security: [{sanctum: []}], responses: {'200': {description: Paginated trips}}}
-    post: {summary: Create a draft fishing trip, security: [{sanctum: []}], responses: {'201': {description: Created}}}
+    post:
+      summary: Idempotently create a draft fishing trip from the mobile form
+      security: [{sanctum: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/FishingTripWrite'}}}}
+      responses: {'201': {description: Created or replayed}, '422': {description: Validation error}}
   /fishing-trips/{fishingTrip}:
     get: {summary: Return an owned fishing trip, security: [{sanctum: []}], responses: {'200': {description: Fishing trip}, '403': {description: Ownership denied}}}
     put: {summary: Replace editable fields on an owned draft fishing trip, security: [{sanctum: []}], responses: {'200': {description: Updated}, '409': {description: Trip is no longer draft}}}
     patch: {summary: Update editable fields on an owned draft fishing trip, security: [{sanctum: []}], responses: {'200': {description: Updated}, '409': {description: Trip is no longer draft}}}
   /catches:
     get: {summary: List catches from the fisher's owned trips, security: [{sanctum: []}], responses: {'200': {description: Paginated catches}}}
-    post: {summary: Idempotently record a catch on an active trip, security: [{sanctum: []}], responses: {'201': {description: Created or replayed}}}
+    post:
+      summary: Idempotently record a geolocated catch on an active trip
+      security: [{sanctum: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CatchWrite'}}}}
+      responses: {'201': {description: Created or replayed}, '422': {description: Validation error}}
   /catches/{catchRecord}:
     get: {summary: Return a catch from an owned fishing trip, security: [{sanctum: []}], responses: {'200': {description: Catch record}, '403': {description: Ownership denied}}}
     put: {summary: Replace mutable catch fields while its owned trip is active, security: [{sanctum: []}], responses: {'200': {description: Updated}, '422': {description: Allocation invariant violated}}}
     patch: {summary: Update mutable catch fields while its owned trip is active, security: [{sanctum: []}], responses: {'200': {description: Updated}, '422': {description: Allocation invariant violated}}}
     delete: {summary: Delete an unallocated catch while its owned trip is active, security: [{sanctum: []}], responses: {'200': {description: Deleted}, '409': {description: Catch is allocated or trip is not active}}}
   /batches:
-    post: {summary: Allocate catches and issue a secure QR, security: [{sanctum: []}], responses: {'201': {description: Created}, '422': {description: Invalid allocation}}}
+    post:
+      summary: Allocate same-trip catches, preserve handling data, and issue a secure QR
+      security: [{sanctum: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/BatchWrite'}}}}
+      responses: {'201': {description: Created}, '422': {description: Invalid allocation or handling data}}
   /batches/{batch}/documents:
     get: {summary: List private document descriptors for an authorized batch, security: [{sanctum: []}], responses: {'200': {description: Paginated batch documents}, '403': {description: Batch access denied}}}
     post: {summary: Upload a PDF or image document to a Fisher-organization batch, security: [{sanctum: []}], responses: {'201': {description: Private document stored}, '403': {description: Fisher organization access required}, '422': {description: Invalid category, file type, or size}}}
+  /files:
+    post:
+      summary: Upload an authorized private file and return its canonical descriptor
+      security: [{sanctum: []}]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [category, entity_type, entity_id, file]
+              properties:
+                category: {type: string, enum: [BOAT_IMAGE, CATCH_IMAGE, INSPECTION_IMAGE, PROCESSING_IMAGE, BATCH_DOCUMENT, CERTIFICATE, DELIVERY_IMAGE, DELIVERY_SIGNATURE]}
+                entity_type: {type: string, enum: [boat, catch_record, quality_inspection, processing_record, fish_batch, transport_trip, retail_receipt]}
+                entity_id: {type: string, format: uuid}
+                file: {type: string, format: binary}
+      responses:
+        '201':
+          description: Private file stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: {$ref: '#/components/schemas/FileAsset'}
+        '403': {description: Entity or category access denied}
+        '422': {description: Invalid category, pairing, file type, or size}
+  /files/{file}:
+    get:
+      summary: Download an authorized private file
+      security: [{sanctum: []}]
+      responses: {'200': {description: Original binary content}, '403': {description: File access denied}, '404': {description: File not found}}
+    delete:
+      summary: Delete an authorized private file
+      security: [{sanctum: []}]
+      responses: {'204': {description: File deleted}, '403': {description: File deletion denied}, '404': {description: File not found}}
+  /processing-records:
+    post:
+      summary: Create a processing record with mobile assignment metadata and ordered steps
+      security: [{sanctum: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ProcessingRecordWrite'}}}}
+      responses: {'201': {description: Processing record and steps created}, '403': {description: Batch is assigned to another processor}, '409': {description: Batch is not ready or already has a record}, '422': {description: Invalid input or assignment data}}
   /processing-records/{processingRecord}:
     get: {summary: Return an organization-scoped processing record with steps and inspections, security: [{sanctum: []}], responses: {'200': {description: Processing record}, '403': {description: Organization access denied}}}
     put: {summary: Update notes on a non-completed processing record, security: [{sanctum: []}], responses: {'200': {description: Notes updated}, '409': {description: Processing record is complete}, '422': {description: Invalid notes}}}
   /processing-records/{processingRecord}/steps/{step}/start:
     post: {summary: Start the next pending step belonging to the processing record, security: [{sanctum: []}], responses: {'200': {description: Step started}, '404': {description: Step does not belong to record}, '409': {description: Invalid sequence or workflow state}}}
   /processing-records/{processingRecord}/steps/{step}/complete:
-    post: {summary: Complete an active step belonging to an active processing record, security: [{sanctum: []}], responses: {'200': {description: Step completed}, '404': {description: Step does not belong to record}, '409': {description: Invalid workflow state}, '422': {description: Invalid measurements or reconciliation}}}
+    post:
+      summary: Complete an active step belonging to an active processing record
+      security: [{sanctum: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ProcessingStepCompleteWrite'}}}}
+      responses: {'200': {description: Step completed}, '404': {description: Step does not belong to record}, '409': {description: Invalid workflow state}, '422': {description: Invalid measurements or reconciliation}}
   /package-labels/{label}/print:
     get: {summary: Render a read-only printable package label without changing label state, security: [{sanctum: []}], responses: {'200': {description: Printable HTML label}, '403': {description: Label access denied}}}
   /retailer/dashboard:
@@ -227,6 +473,12 @@ paths:
       security: [{sanctum: []}]
       parameters: [{in: path, name: trip, required: true, schema: {type: string, format: uuid}}]
       responses: {'200': {description: Live access descriptor}}
+  /transport-trips:
+    post:
+      summary: Create a transporter trip with an optional estimated distance
+      security: [{sanctum: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TransportTripWrite'}}}}
+      responses: {'201': {description: Draft trip and checklist created}, '422': {description: Invalid trip data}}
   /transport-trips/{trip}/sensor-readings:
     get:
       summary: Return privacy-whitelisted permanent trip telemetry
@@ -263,7 +515,11 @@ paths:
     get: {summary: Return organization-scoped trip, assignment, alert, device, and recent-trip metrics, security: [{sanctum: []}], responses: {'200': {description: Transport dashboard}}}
   /vehicles:
     get: {summary: List organization vehicles, security: [{sanctum: []}], responses: {'200': {description: Paginated vehicles}}}
-    post: {summary: Create an organization vehicle, security: [{sanctum: []}], responses: {'201': {description: Vehicle created}}}
+    post:
+      summary: Create an organization vehicle using the mobile vehicle contract
+      security: [{sanctum: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/VehicleWrite'}}}}
+      responses: {'201': {description: Vehicle created}, '422': {description: Invalid vehicle data}}
   /transport-trips/{trip}/checklist:
     get: {summary: Return the mandatory pre-trip checklist, security: [{sanctum: []}], responses: {'200': {description: Checklist}}}
     post: {summary: Update checklist item states under a locked pre-departure trip, security: [{sanctum: []}], responses: {'200': {description: Checklist updated}, '409': {description: Trip already departed}}}
@@ -298,11 +554,36 @@ paths:
       summary: Return privacy-whitelisted AI decision-support history
       security: [{sanctum: []}]
       parameters: [{in: path, name: batch, required: true, schema: {type: string, format: uuid}}]
-      responses: {'200': {description: Paginated AI predictions}, '403': {description: Batch access denied}}
+      responses: {'200': {description: Paginated canonical AI prediction descriptors}, '403': {description: Batch access denied}}
   /batches/{batch}/ai-predictions/latest:
-    get: {summary: Return the latest whitelisted AI decision-support result, security: [{sanctum: []}], responses: {'200': {description: Latest prediction or null}, '403': {description: Batch access denied}}}
+    get:
+      summary: Return the latest whitelisted AI decision-support result
+      security: [{sanctum: []}]
+      responses:
+        '200':
+          description: Latest prediction or null
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: {oneOf: [{$ref: '#/components/schemas/AIPrediction'}, {type: 'null'}]}
+        '403': {description: Batch access denied}
   /batches/{batch}/ai-predictions/request:
-    post: {summary: Queue one batch-unique spoilage-risk prediction request, security: [{sanctum: []}], responses: {'202': {description: Prediction queued}, '403': {description: Batch access denied}, '429': {$ref: '#/components/responses/TooManyRequests'}}}
+    post:
+      summary: Queue one batch-unique spoilage-risk prediction request
+      security: [{sanctum: []}]
+      responses:
+        '202':
+          description: Prediction queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: {$ref: '#/components/schemas/AIPredictionQueued'}
+        '403': {description: Batch access denied}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
   /public/trace/{token}:
     get:
       summary: Return a privacy-filtered public trace with aggregate persisted blockchain evidence

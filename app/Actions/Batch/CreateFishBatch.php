@@ -25,6 +25,10 @@ class CreateFishBatch
             if ($catches->count() !== $allocations->count()) {
                 throw ValidationException::withMessages(['catches' => ['One or more catches are not available.']]);
             }
+            $tripIds = $catches->pluck('fishing_trip_id')->unique();
+            if ($tripIds->count() !== 1) {
+                throw ValidationException::withMessages(['catches' => ['All catches in a batch must belong to the same fishing trip.']]);
+            }
             $total = 0.0;
             foreach ($allocations as $allocation) {
                 $catch = $catches[$allocation['catch_id']];
@@ -37,7 +41,25 @@ class CreateFishBatch
                 }
                 $total += (float) $allocation['weight_kg'];
             }
-            $batch = FishBatch::create(['organization_id' => $organization->id, 'created_by' => $user->id, 'fish_species_id' => $data['fish_species_id'], 'batch_code' => 'FT-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)), 'type' => 'RAW', 'status' => BatchStatus::AVAILABLE_FOR_PROCESSING, 'product_type' => $data['product_type'], 'total_weight_kg' => $total, 'created_from_catch_at' => now()]);
+            $batch = FishBatch::create([
+                'organization_id' => $organization->id,
+                'created_by' => $user->id,
+                'fish_species_id' => $data['fish_species_id'],
+                'fishing_trip_id' => $tripIds->first(),
+                'batch_code' => 'FT-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
+                'type' => 'RAW',
+                'status' => BatchStatus::AVAILABLE_FOR_PROCESSING,
+                'product_type' => $data['product_type'],
+                'total_weight_kg' => $total,
+                'fish_count' => $catches->sum('quantity'),
+                'quality_grade' => $data['quality_grade'] ?? null,
+                'storage_temperature_celsius' => $data['storage_temperature_celsius'] ?? null,
+                'ice_type' => $data['ice_type'] ?? null,
+                'ice_amount_kg' => $data['ice_amount_kg'] ?? null,
+                'landing_site_name' => $data['landing_site_name'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'created_from_catch_at' => now(),
+            ]);
             foreach ($allocations as $allocation) {
                 $catch = $catches[$allocation['catch_id']];
                 $batch->catches()->attach($catch->id, ['allocated_weight_kg' => $allocation['weight_kg']]);

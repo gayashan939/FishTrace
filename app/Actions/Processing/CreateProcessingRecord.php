@@ -26,7 +26,7 @@ class CreateProcessingRecord
             $maximum = min((float) $batch->total_weight_kg, (float) $intake->received_weight_kg);
             abort_if((float) $data['input_weight_kg'] > $maximum, 422, "Input weight exceeds the received {$maximum} kg.");
             abort_if(ProcessingRecord::query()->where('fish_batch_id', $batch->id)->exists(), 409, 'A processing record already exists for this batch.');
-            $record = ProcessingRecord::create(['fish_batch_id' => $batch->id, 'batch_intake_id' => $intake->id, 'organization_id' => $organization->id, 'created_by' => $user->id, 'processing_type_id' => $data['processing_type_id'] ?? null, 'status' => ProcessingStatus::IN_PROGRESS, 'input_weight_kg' => $data['input_weight_kg'], 'notes' => $data['notes'] ?? null, 'started_at' => now()]);
+            $record = ProcessingRecord::create(['fish_batch_id' => $batch->id, 'batch_intake_id' => $intake->id, 'organization_id' => $organization->id, 'created_by' => $user->id, 'processing_type_id' => $data['processing_type_id'] ?? null, 'operator_name' => $data['operator_name'] ?? null, 'processing_area' => $data['processing_area'] ?? null, 'status' => ProcessingStatus::IN_PROGRESS, 'input_weight_kg' => $data['input_weight_kg'], 'notes' => $data['notes'] ?? null, 'started_at' => now()]);
             foreach (ProcessingStepType::cases() as $step) {
                 $record->steps()->create(['type' => $step, 'sequence' => $step->sequence(), 'status' => 'PENDING']);
             }

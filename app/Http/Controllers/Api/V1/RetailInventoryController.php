@@ -13,6 +13,7 @@ use App\Http\Requests\Retail\MarkInventoryUnavailableRequest;
 use App\Http\Requests\Retail\ReceivePackageRequest;
 use App\Http\Requests\Retail\RetailDirectoryRequest;
 use App\Http\Requests\Retail\RetailInventoryFilterRequest;
+use App\Http\Requests\Retail\ResolveRetailLabelRequest;
 use App\Http\Requests\Retail\StoreRetailReceiptRequest;
 use App\Http\Requests\Retail\StoreStockAdjustmentRequest;
 use App\Http\Resources\Retail\InventoryLotResource;
@@ -42,6 +43,14 @@ class RetailInventoryController extends Controller
         $page->setCollection(PackageLabelResource::collection($page->getCollection())->collection);
 
         return ApiResponse::data($page);
+    }
+
+    public function resolveLabel(ResolveRetailLabelRequest $request, RetailOperationsQuery $operations): JsonResponse
+    {
+        $label = $operations->resolveIncomingLabel((string) $request->validated('code'));
+        abort_if($label === null, 404, 'No incoming package matches this QR code.');
+
+        return ApiResponse::data(new PackageLabelResource($label));
     }
 
     public function receipts(RetailDirectoryRequest $request, RetailOperationsQuery $operations): JsonResponse

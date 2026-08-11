@@ -1097,6 +1097,45 @@
                     "response": []
                 },
                 {
+                    "name": "PUT /api/v1/auth/profile",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/profile",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "profile"
+                            ]
+                        },
+                        "description": "Controller action: `App\\Http\\Controllers\\Api\\V1\\AuthController@updateProfile`. Validation: `App\\Http\\Requests\\Auth\\UpdateProfileRequest`.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "response": []
+                },
+                {
                     "name": "POST /api/v1/auth/reset-password",
                     "request": {
                         "method": "POST",
@@ -3355,6 +3394,58 @@
                         "description": "Controller action: `App\\Http\\Controllers\\Api\\V1\\ProcessorBatchController@incoming`. Validation: `App\\Http\\Requests\\Processor\\ProcessorBatchDirectoryRequest`."
                     },
                     "response": []
+                },
+                {
+                    "name": "GET /api/v1/processor/reference-data",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/processor/reference-data",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "processor",
+                                "reference-data"
+                            ]
+                        },
+                        "description": "Controller action: `App\\Http\\Controllers\\Api\\V1\\ProcessorReferenceDataController`. No dedicated Form Request."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET /api/v1/processor/resolve-batch",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/processor/resolve-batch",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "processor",
+                                "resolve-batch"
+                            ]
+                        },
+                        "description": "Controller action: `App\\Http\\Controllers\\Api\\V1\\ProcessorBatchController@resolve`. Validation: `App\\Http\\Requests\\Processor\\ResolveProcessorBatchRequest`."
+                    },
+                    "response": []
                 }
             ]
         },
@@ -4462,6 +4553,32 @@
                     "response": []
                 },
                 {
+                    "name": "GET /api/v1/retailer/resolve-label",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/retailer/resolve-label",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "retailer",
+                                "resolve-label"
+                            ]
+                        },
+                        "description": "Controller action: `App\\Http\\Controllers\\Api\\V1\\RetailInventoryController@resolveLabel`. Validation: `App\\Http\\Requests\\Retail\\ResolveRetailLabelRequest`."
+                    },
+                    "response": []
+                },
+                {
                     "name": "GET /api/v1/retailer/sales/{sale}",
                     "request": {
                         "method": "GET",
@@ -4580,6 +4697,50 @@
                             ]
                         },
                         "description": "Controller action: `App\\Http\\Controllers\\Api\\V1\\RetailInventoryController@stockAdjustment`. Validation: `App\\Http\\Requests\\Retail\\StoreStockAdjustmentRequest`.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Support",
+            "item": [
+                {
+                    "name": "POST /api/v1/support/issues",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/support/issues",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "support",
+                                "issues"
+                            ]
+                        },
+                        "description": "Controller action: `App\\Http\\Controllers\\Api\\V1\\SupportIssueController@store`. Validation: `App\\Http\\Requests\\Support\\StoreSupportIssueRequest`.",
                         "body": {
                             "mode": "raw",
                             "raw": "{}",
@@ -5269,6 +5430,32 @@
             "name": "Transporter",
             "item": [
                 {
+                    "name": "GET /api/v1/transporter/available-batches",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/transporter/available-batches",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "transporter",
+                                "available-batches"
+                            ]
+                        },
+                        "description": "Controller action: `App\\Http\\Controllers\\Api\\V1\\TransportTripController@availableBatches`. Validation: `App\\Http\\Requests\\Transport\\TransportTripDirectoryRequest`."
+                    },
+                    "response": []
+                },
+                {
                     "name": "GET /api/v1/transporter/dashboard",
                     "request": {
                         "method": "GET",
@@ -5291,6 +5478,32 @@
                             ]
                         },
                         "description": "Controller action: `App\\Http\\Controllers\\Api\\V1\\TransportTripController@dashboard`. No dedicated Form Request."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET /api/v1/transporter/resolve-batch",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/transporter/resolve-batch",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "transporter",
+                                "resolve-batch"
+                            ]
+                        },
+                        "description": "Controller action: `App\\Http\\Controllers\\Api\\V1\\TransportTripController@resolveBatch`. Validation: `App\\Http\\Requests\\Transport\\ResolveTransportBatchRequest`."
                     },
                     "response": []
                 }

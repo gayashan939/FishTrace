@@ -26,7 +26,7 @@ class CreateTransportTrip
 
             return $trip;
         });
-        $this->audit->record('TRANSPORT_TRIP_CREATED', $trip, null, $trip->only(['trip_code', 'vehicle_id', 'driver_name', 'origin', 'destination', 'scheduled_at']), $user, $organization->id);
+        $this->audit->record('TRANSPORT_TRIP_CREATED', $trip, null, $trip->only(['trip_code', 'vehicle_id', 'driver_name', 'origin', 'destination', 'estimated_distance_km', 'scheduled_at']), $user, $organization->id);
 
         return $trip->load('checklist.items');
     }

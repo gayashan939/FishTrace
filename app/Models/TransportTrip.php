@@ -15,11 +15,11 @@ class TransportTrip extends Model
 {
     use BelongsToOrganization, HasUuids;
 
-    protected $fillable = ['organization_id', 'created_by', 'vehicle_id', 'trip_code', 'driver_name', 'status', 'origin', 'destination', 'scheduled_at', 'started_at', 'completed_at'];
+    protected $fillable = ['organization_id', 'created_by', 'vehicle_id', 'trip_code', 'driver_name', 'status', 'origin', 'destination', 'estimated_distance_km', 'scheduled_at', 'started_at', 'arrived_at', 'completed_at'];
 
     protected function casts(): array
     {
-        return ['status' => TransportTripStatus::class, 'scheduled_at' => 'datetime', 'started_at' => 'datetime', 'completed_at' => 'datetime'];
+        return ['status' => TransportTripStatus::class, 'estimated_distance_km' => 'decimal:2', 'scheduled_at' => 'datetime', 'started_at' => 'datetime', 'arrived_at' => 'datetime', 'completed_at' => 'datetime'];
     }
 
     public function vehicle(): BelongsTo
@@ -50,6 +50,11 @@ class TransportTrip extends Model
     public function readings(): HasMany
     {
         return $this->hasMany(SensorReading::class);
+    }
+
+    public function latestReading(): HasOne
+    {
+        return $this->hasOne(SensorReading::class)->latestOfMany('recorded_at');
     }
 
     public function alerts(): HasMany

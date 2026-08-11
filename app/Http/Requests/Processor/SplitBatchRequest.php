@@ -16,6 +16,6 @@ class SplitBatchRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['children' => ['required', 'array', 'min:2', 'max:50'], 'children.*.weight_kg' => ['required', 'numeric', 'gt:0'], 'children.*.product_type' => ['nullable', 'string', 'max:100'], 'children.*.package_count' => ['required', 'integer', 'min:1', 'max:10000']];
+        return ['children' => ['required', 'array', 'min:1', 'max:50'], 'children.*.weight_kg' => ['required', 'numeric', 'gt:0'], 'children.*.product_type' => ['nullable', 'string', 'max:100'], 'children.*.package_count' => ['required', 'integer', 'min:1', 'max:50']];
     }
 }

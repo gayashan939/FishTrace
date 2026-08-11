@@ -15,11 +15,16 @@ class FishBatch extends Model
 {
     use BelongsToOrganization, HasUuids;
 
-    protected $fillable = ['organization_id', 'created_by', 'fish_species_id', 'batch_code', 'type', 'status', 'product_type', 'total_weight_kg', 'created_from_catch_at', 'is_public', 'is_recalled'];
+    protected $fillable = ['organization_id', 'created_by', 'fish_species_id', 'fishing_trip_id', 'batch_code', 'type', 'status', 'product_type', 'total_weight_kg', 'fish_count', 'quality_grade', 'storage_temperature_celsius', 'ice_type', 'ice_amount_kg', 'landing_site_name', 'notes', 'created_from_catch_at', 'is_public', 'is_recalled'];
 
     protected function casts(): array
     {
-        return ['status' => BatchStatus::class, 'total_weight_kg' => 'decimal:3', 'is_public' => 'boolean', 'is_recalled' => 'boolean', 'created_from_catch_at' => 'datetime'];
+        return ['status' => BatchStatus::class, 'total_weight_kg' => 'decimal:3', 'fish_count' => 'integer', 'storage_temperature_celsius' => 'decimal:2', 'ice_amount_kg' => 'decimal:3', 'is_public' => 'boolean', 'is_recalled' => 'boolean', 'created_from_catch_at' => 'datetime'];
+    }
+
+    public function fishingTrip(): BelongsTo
+    {
+        return $this->belongsTo(FishingTrip::class);
     }
 
     public function species(): BelongsTo

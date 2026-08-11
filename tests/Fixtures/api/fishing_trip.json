@@ -1,0 +1,13 @@
+{
+  "data": {
+    "id": "0aa9f571-f819-4fba-b440-faa594a1a321",
+    "boat_id": "e708ee46-72b7-473a-a30c-80e44ab37efa",
+    "trip_code": "TRIP-2026-MOBILE-001",
+    "status": "ACTIVE",
+    "expected_duration_hours": "12.00",
+    "crew": ["Alex Johnson", "M. Kumar"],
+    "catch_kg": "40.000",
+    "catch_count": 1,
+    "batch_count": 1
+  }
+}

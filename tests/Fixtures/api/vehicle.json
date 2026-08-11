@@ -1,0 +1,19 @@
+{
+  "data": {
+    "id": "59421908-e1b1-48b7-a64b-862e1fa4e631",
+    "organization_id": "4d79e2c6-03af-419d-b34d-5800df850dae",
+    "registration_number": "WP-CAB-2048",
+    "name": "Reefer Truck 01",
+    "vehicle_type": "Refrigerated Truck",
+    "refrigeration_category": "Category A",
+    "capacity_tonnes": "1.200",
+    "reefer_unit": "Carrier Supra 550",
+    "min_temperature_celsius": "-20.00",
+    "max_temperature_celsius": "20.00",
+    "default_driver_name": "Alex Johnson",
+    "is_active": true,
+    "created_at": "2026-08-08T08:00:00.000000Z",
+    "updated_at": "2026-08-08T08:00:00.000000Z"
+  },
+  "meta": {}
+}

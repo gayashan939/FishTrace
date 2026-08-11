@@ -1,0 +1,12 @@
+{
+  "data": {
+    "id": "58c7f577-95a8-42b0-a21b-c47e393a6004",
+    "fishing_trip_id": "0aa9f571-f819-4fba-b440-faa594a1a321",
+    "weight_kg": "40.000",
+    "quantity": 2,
+    "condition": "GOOD",
+    "latitude": "17.6860000",
+    "longitude": "83.2190000",
+    "verified": true
+  }
+}

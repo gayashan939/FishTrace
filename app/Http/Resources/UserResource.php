@@ -14,6 +14,18 @@ class UserResource extends JsonResource
         $user = User::findOrFail($this->resource->getKey());
         $organization = $user->primaryOrganization();
 
-        return ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => $user->roles()->value('name'), 'organization' => $organization ? ['id' => $organization->id, 'name' => $organization->name] : null];
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->roles()->value('name'),
+            'organization' => $organization ? [
+                'id' => $organization->id,
+                'name' => $organization->name,
+                'code' => $organization->code,
+                'type' => $organization->type,
+                'is_active' => $organization->is_active,
+            ] : null,
+        ];
     }
 }

@@ -19,7 +19,7 @@ class CreateCatchRecord
         if (! empty($data['client_record_id'])) {
             $existing = CatchRecord::query()->where('organization_id', $organization->id)->where('client_record_id', $data['client_record_id'])->first();
             if ($existing) {
-                return $existing->load(['trip', 'species']);
+                return $existing->load(['trip', 'species', 'gearType', 'images']);
             }
         }
         $trip = FishingTrip::query()->where('organization_id', $organization->id)->where('fisher_id', $user->id)->findOrFail($data['fishing_trip_id']);
@@ -27,6 +27,6 @@ class CreateCatchRecord
             throw ValidationException::withMessages(['fishing_trip_id' => ['Catches may only be added to an active trip.']]);
         }
 
-        return CatchRecord::create(array_merge($data, ['organization_id' => $organization->id]))->load(['trip', 'species']);
+        return CatchRecord::create(array_merge($data, ['organization_id' => $organization->id]))->load(['trip', 'species', 'gearType', 'images']);
     }
 }

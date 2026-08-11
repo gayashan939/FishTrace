@@ -21,7 +21,7 @@ class FishBatchController extends Controller
     {
         $this->authorize('viewAny', FishBatch::class);
         $filters = $request->validated();
-        $page = $operations->batches($request->user(), (int) ($filters['per_page'] ?? 20));
+        $page = $operations->batches($request->user(), (int) ($filters['per_page'] ?? 20), $filters);
         $page->setCollection(FishBatchResource::collection($page->getCollection())->collection);
 
         return ApiResponse::data($page);

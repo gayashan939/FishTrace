@@ -40,7 +40,7 @@ class TransitionProcessingStep
                 ProcessingStepType::CLEANING => ['cleaned_weight_kg' => ['required', 'numeric', 'gt:0']],
                 ProcessingStepType::GRADING => ['grade' => ['required', 'string', 'max:50']],
                 ProcessingStepType::FREEZING => ['product_temperature' => ['required', 'numeric', 'between:-40,4']],
-                ProcessingStepType::PACKAGING => ['output_weight_kg' => ['required', 'numeric', 'gt:0'], 'waste_weight_kg' => ['required', 'numeric', 'min:0'], 'package_count' => ['required', 'integer', 'min:1']],
+                ProcessingStepType::PACKAGING => ['output_weight_kg' => ['required', 'numeric', 'gt:0'], 'waste_weight_kg' => ['required', 'numeric', 'min:0'], 'package_count' => ['required', 'integer', 'min:1', 'max:50']],
             };
             $measurements = Validator::make($data['measurements'], $rules)->validate();
             if ($type === ProcessingStepType::PACKAGING) {

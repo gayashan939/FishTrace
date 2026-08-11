@@ -42,6 +42,7 @@ Route::prefix('admin')->middleware('auth')->group(function (): void {
         Route::get('/trips/{trip}', [FishingOperationsController::class, 'trip'])->name('admin.fishing.trips.show');
         Route::get('/catches/export', [FishingOperationsController::class, 'exportCatches'])->name('admin.fishing.catches.export');
         Route::get('/catches', [FishingOperationsController::class, 'catches'])->name('admin.fishing.catches.index');
+        Route::get('/catches/{catchRecord}/images/{file}', [FishingOperationsController::class, 'catchImage'])->name('admin.fishing.catches.images.show');
         Route::get('/catches/{catchRecord}', [FishingOperationsController::class, 'catch'])->name('admin.fishing.catches.show');
     });
     Route::prefix('reference-data')->group(function (): void {

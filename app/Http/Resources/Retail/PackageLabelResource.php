@@ -18,6 +18,7 @@ class PackageLabelResource extends JsonResource
             'id' => $label->id,
             'fish_batch_id' => $label->fish_batch_id,
             'label_code' => $label->label_code,
+            'trace_url' => url('/trace/'.$label->getRawOriginal('public_token')),
             'package_weight_kg' => $label->package_weight_kg,
             'package_count' => $label->package_count,
             'printed_at' => $label->printed_at,

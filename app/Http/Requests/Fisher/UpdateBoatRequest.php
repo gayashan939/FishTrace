@@ -20,8 +20,11 @@ class UpdateBoatRequest extends FormRequest
         return [
             'registration_number' => ['required', 'string', 'max:50', Rule::unique('boats')->ignore($this->route('boat'))],
             'name' => ['required', 'string', 'max:120'],
-            'type' => ['nullable', 'string', 'max:80'],
+            'type' => ['required', Rule::in(['LONG_LINER', 'GILLNETTER', 'DAY_BOAT'])],
             'capacity_kg' => ['nullable', 'numeric', 'gt:0'],
+            'length_meters' => ['required', 'numeric', 'gt:0', 'max:999999.99'],
+            'engine_details' => ['required', 'string', 'max:160'],
+            'home_port' => ['required', 'string', 'max:120'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }

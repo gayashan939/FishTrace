@@ -38,7 +38,15 @@ return Application::configure(basePath: dirname(__DIR__))
             $code = match ($status) {
                 401 => 'UNAUTHENTICATED', 403 => 'FORBIDDEN', 404 => 'NOT_FOUND', 409 => 'CONFLICT', 422 => 'VALIDATION_FAILED', 429 => 'TOO_MANY_REQUESTS', default => 'SERVER_ERROR'
             };
-            $message = $status === 500 && ! config('app.debug') ? 'An unexpected error occurred.' : $exception->getMessage();
+            $message = match (true) {
+                $exception instanceof ValidationException => $exception->getMessage(),
+                $status === 401 => 'Your session has expired. Please sign in again.',
+                $status === 403 => 'You do not have permission to perform this action.',
+                $status === 404 => 'The requested record was not found.',
+                $status === 429 => 'Too many requests. Please wait and try again.',
+                $status >= 500 && ! config('app.debug') => 'An unexpected error occurred.',
+                default => $exception->getMessage() ?: 'The request could not be completed.',
+            };
 
             return response()->json(['error' => ['code' => $code, 'message' => $message, 'field_errors' => $exception instanceof ValidationException ? $exception->errors() : null], 'meta' => ['request_id' => $request->attributes->get('request_id'), 'timestamp' => now()->toIso8601String()]], $status);
         });

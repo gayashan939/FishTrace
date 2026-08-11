@@ -8,6 +8,7 @@ use App\Enums\NotificationType;
 use App\Enums\ProcessingStatus;
 use App\Models\FishBatch;
 use App\Models\ProcessingRecord;
+use App\Models\QualityGrade;
 use App\Models\QualityInspection;
 use App\Models\User;
 use App\Services\Notifications\OperationalNotifier;
@@ -19,6 +20,13 @@ class SubmitQualityInspection
 
     public function execute(User $user, array $data): QualityInspection
     {
+        if (empty($data['quality_grade_id']) && ! empty($data['quality_grade'])) {
+            $data['quality_grade_id'] = QualityGrade::query()
+                ->where('code', $data['quality_grade'])
+                ->where('is_active', true)
+                ->value('id');
+        }
+        unset($data['quality_grade']);
         $record = ProcessingRecord::query()->findOrFail($data['processing_record_id']);
         if (! $user->hasRole('INSPECTOR')) {
             abort_unless($user->primaryOrganization()?->id === $record->organization_id, 403);

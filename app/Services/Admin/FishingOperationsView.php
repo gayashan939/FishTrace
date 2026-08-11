@@ -48,7 +48,7 @@ class FishingOperationsView
 
     public function catch(CatchRecord $catch): array
     {
-        $catch->load(['organization:id,name,code', 'trip.organization:id,name,code', 'trip.fisher:id,name,email', 'trip.boat:id,name,registration_number', 'trip.landingSite:id,name,district', 'species:id,common_name,scientific_name', 'gearType:id,name', 'batches:id,batch_code,status,total_weight_kg,product_type']);
+        $catch->load(['organization:id,name,code', 'trip.organization:id,name,code', 'trip.fisher:id,name,email', 'trip.boat:id,name,registration_number', 'trip.landingSite:id,name,district', 'species:id,common_name,scientific_name', 'gearType:id,name', 'images', 'batches:id,batch_code,status,total_weight_kg,product_type']);
 
         return ['catch' => $catch, 'reconciliation' => $this->reconcile($catch)];
     }

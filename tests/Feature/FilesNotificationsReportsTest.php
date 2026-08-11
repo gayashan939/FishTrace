@@ -71,7 +71,17 @@ class FilesNotificationsReportsTest extends TestCase
         $boat = Boat::where('organization_id', $fisher->primaryOrganization()?->id)->firstOrFail();
         Sanctum::actingAs($fisher);
 
-        $response = $this->post('/api/v1/files', ['category' => 'BOAT_IMAGE', 'entity_type' => 'boat', 'entity_id' => $boat->id, 'file' => $this->png('vessel.png')], ['Accept' => 'application/json'])->assertCreated()->assertJsonMissingPath('data.path')->assertJsonMissingPath('data.disk');
+        $response = $this->post('/api/v1/files', ['category' => 'BOAT_IMAGE', 'entity_type' => 'boat', 'entity_id' => $boat->id, 'file' => $this->png('vessel.png')], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonStructure(['data' => ['id', 'category', 'entity_type', 'entity_id', 'original_name', 'mime_type', 'extension', 'size_bytes', 'sha256', 'download_url', 'created_at']])
+            ->assertJsonPath('data.category', 'BOAT_IMAGE')
+            ->assertJsonPath('data.entity_type', 'boat')
+            ->assertJsonPath('data.entity_id', $boat->id)
+            ->assertJsonPath('data.original_name', 'vessel.png')
+            ->assertJsonPath('data.mime_type', 'image/png')
+            ->assertJsonPath('data.extension', 'png')
+            ->assertJsonMissingPath('data.path')
+            ->assertJsonMissingPath('data.disk');
         $fileId = $response->json('data.id');
         $asset = FileAsset::findOrFail($fileId);
         Storage::disk('local')->assertExists($asset->path);

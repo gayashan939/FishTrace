@@ -15,12 +15,12 @@ use Illuminate\Support\Str;
 
 class SpoilagePredictionService
 {
-    public function __construct(private AIPredictionClient $client, private FeatureAggregator $features, private OperationalNotifier $notifier) {}
+    public function __construct(private AIPredictionClient $client, private FeatureAggregator $features, private OperationalNotifier $notifier, private PredictionResultNormalizer $normalizer) {}
 
     public function predict(FishBatch $batch, ?User $requestedBy = null): AIPrediction
     {
         $features = $this->features->forBatch($batch);
-        $result = $this->client->predict($features);
+        $result = $this->normalizer->normalize($this->client->predict($features));
         $tripId = DB::table('transport_batches')->where('fish_batch_id', $batch->id)->latest()->value('transport_trip_id');
 
         $prediction = DB::transaction(function () use ($batch, $requestedBy, $features, $result, $tripId): AIPrediction {

@@ -7,6 +7,7 @@ use App\Models\BatchIntake;
 use App\Models\FishBatch;
 use App\Models\ProcessingRecord;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 
 class ProcessorBatchQuery
 {
@@ -23,10 +24,34 @@ class ProcessorBatchQuery
     public function incoming(int $perPage): LengthAwarePaginator
     {
         return FishBatch::query()
-            ->with(['species', 'qrCode'])
+            ->with(['species', 'qrCode', 'organization:id,name,code', 'fishingTrip.boat:id,name,registration_number', 'documents'])
             ->where('status', BatchStatus::AVAILABLE_FOR_PROCESSING)
             ->latest()
             ->paginate($perPage);
+    }
+
+    public function resolveIncoming(string $scannedValue): ?FishBatch
+    {
+        $value = trim($scannedValue);
+        $path = parse_url($value, PHP_URL_PATH);
+        $token = is_string($path) ? basename(trim($path, '/')) : $value;
+
+        return FishBatch::query()
+            ->with(['species', 'qrCode'])
+            ->where('status', BatchStatus::AVAILABLE_FOR_PROCESSING)
+            ->where(function ($query) use ($value, $token): void {
+                if (Str::isUuid($value)) {
+                    $query->orWhereKey($value);
+                }
+                if (Str::isUuid($token)) {
+                    $query->orWhereKey($token);
+                }
+                $query
+                    ->orWhere('batch_code', $value)
+                    ->orWhere('batch_code', $token)
+                    ->orWhereHas('qrCode', fn ($qr) => $qr->where('public_token', $token)->whereNull('revoked_at'));
+            })
+            ->first();
     }
 
     public function history(?string $organizationId, int $perPage): LengthAwarePaginator
@@ -40,6 +65,6 @@ class ProcessorBatchQuery
 
     public function details(FishBatch $batch): FishBatch
     {
-        return $batch->load(['species', 'qrCode', 'events', 'intakes.processingRecord.steps']);
+        return $batch->load(['species', 'qrCode', 'organization:id,name,code', 'fishingTrip.boat:id,name,registration_number', 'documents', 'events', 'intakes.processingRecord.steps']);
     }
 }

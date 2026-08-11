@@ -7,12 +7,14 @@ use App\Http\Requests\Admin\FishingFilterRequest;
 use App\Models\Boat;
 use App\Models\CatchRecord;
 use App\Models\FishingTrip;
+use App\Models\FileAsset;
 use App\Models\User;
 use App\Services\Admin\AdminDirectoryPaginator;
 use App\Services\Admin\AdminFilterOptions;
 use App\Services\Admin\FishingOperationsExport;
 use App\Services\Admin\FishingOperationsQuery;
 use App\Services\Admin\FishingOperationsView;
+use App\Services\Files\PrivateFileDownload;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -86,6 +88,21 @@ class FishingOperationsController extends Controller
         $this->authorize('view', $catchRecord);
 
         return view('admin.fishing.catches.show', $operations->catch($catchRecord));
+    }
+
+    public function catchImage(Request $request, CatchRecord $catchRecord, FileAsset $file, PrivateFileDownload $download): StreamedResponse
+    {
+        $this->admin($request);
+        $this->authorize('view', $catchRecord);
+        $this->authorize('view', $file);
+        abort_unless(
+            $file->entity_type === 'catch_record'
+                && $file->entity_id === $catchRecord->id
+                && $file->getRawOriginal('category') === 'CATCH_IMAGE',
+            404,
+        );
+
+        return $download->preview($file, 'ADMIN_CATCH_IMAGE_VIEWED', $request->user());
     }
 
     public function exportTrips(FishingFilterRequest $request, FishingOperationsExport $export): StreamedResponse

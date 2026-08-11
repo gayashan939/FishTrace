@@ -2,6 +2,7 @@
 
 namespace App\Actions\Transport;
 
+use App\Enums\BatchStatus;
 use App\Enums\TransportTripStatus;
 use App\Models\FishBatch;
 use App\Models\TransportTrip;
@@ -20,6 +21,7 @@ class AddBatchToTrip
             abort_unless($lockedTrip->hasStatus(TransportTripStatus::DRAFT) || $lockedTrip->hasStatus(TransportTripStatus::READY), 409, 'Batches can only be changed before departure.');
             $batch = FishBatch::query()->lockForUpdate()->findOrFail($batchId);
             abort_if($batch->is_recalled, 409, 'A recalled batch cannot be transported.');
+            abort_unless(in_array($batch->getRawOriginal('status'), [BatchStatus::PROCESSED->value, BatchStatus::READY_FOR_TRANSPORT->value], true), 409, 'Only a processed batch can be assigned for transport.');
             abort_if($batch->transportTrips()->whereIn('transport_trips.status', ['DRAFT', 'READY', 'ACTIVE'])->where('transport_trips.id', '!=', $lockedTrip->id)->exists(), 409, 'The batch is already assigned to another unfinished trip.');
             $lockedTrip->batches()->syncWithoutDetaching([$batch->id]);
 

@@ -64,7 +64,7 @@ class TransportLifecycleTest extends TestCase
         $this->seed();
         $transporter = $this->transporter();
         Sanctum::actingAs($transporter);
-        $vehicle = $this->postJson('/api/v1/vehicles', ['registration_number' => 'WP-TEST-1001', 'name' => 'Test Reefer'])->assertCreated()->json('data');
+        $vehicle = $this->postJson('/api/v1/vehicles', ['registration_number' => 'WP-TEST-1001', 'name' => 'Test Reefer', 'capacity_tonnes' => 1.2, 'vehicle_type' => 'Refrigerated Truck', 'reefer_unit' => 'Carrier Test Unit', 'min_temperature_celsius' => -20, 'max_temperature_celsius' => 20, 'default_driver_name' => 'Test Driver'])->assertCreated()->assertJsonPath('data.capacity_tonnes', '1.200')->assertJsonPath('data.vehicle_type', 'Refrigerated Truck')->assertJsonPath('data.default_driver_name', 'Test Driver')->json('data');
         $this->patchJson("/api/v1/vehicles/{$vehicle['id']}", ['name' => 'Updated Reefer'])->assertOk()->assertJsonPath('data.name', 'Updated Reefer');
         $trip = $this->postJson('/api/v1/transport-trips', ['vehicle_id' => $vehicle['id'], 'driver_name' => 'Test Driver', 'origin' => 'Galle', 'destination' => 'Colombo'])->assertCreated()->json('data');
 
@@ -120,9 +120,14 @@ class TransportLifecycleTest extends TestCase
         $this->postJson("/api/v1/transport-trips/{$trip->id}/incidents", ['type' => 'TRAFFIC_DELAY', 'severity' => 'WARNING', 'description' => 'Road closure delayed the refrigerated vehicle.', 'occurred_at' => now()->toIso8601String()])->assertCreated();
         $this->postJson("/api/v1/transport-trips/{$trip->id}/complete")->assertConflict();
         $delivery = ['receiver_name' => 'Receiving Officer', 'receiver_contact' => '+94 11 555 0100', 'delivered_at' => now()->toIso8601String()];
+        $this->postJson("/api/v1/transport-trips/{$trip->id}/delivery-confirmation", $delivery)->assertConflict();
+        $this->postJson("/api/v1/transport-trips/{$trip->id}/arrive")->assertOk()->assertJsonPath('data.status', 'ACTIVE');
+        $this->postJson("/api/v1/transport-trips/{$trip->id}/arrive")->assertOk();
+        $this->assertNotNull($trip->fresh()->arrived_at);
         $this->postJson("/api/v1/transport-trips/{$trip->id}/delivery-confirmation", $delivery)->assertOk();
         $this->postJson("/api/v1/transport-trips/{$trip->id}/delivery-confirmation", $delivery)->assertOk();
         $this->assertDatabaseCount('delivery_confirmations', 1);
+        $this->postJson("/api/v1/transport-trips/{$trip->id}/complete")->assertOk()->assertJsonPath('data.status', 'COMPLETED');
         $this->postJson("/api/v1/transport-trips/{$trip->id}/complete")->assertOk()->assertJsonPath('data.status', 'COMPLETED');
 
         $this->assertDatabaseHas('device_assignments', ['id' => $assignment['id'], 'status' => 'ENDED', 'firebase_sync_status' => 'SYNCED']);
@@ -274,7 +279,7 @@ class TransportLifecycleTest extends TestCase
     /** @return array{TransportTrip, FishBatch} */
     private function draftTripWithBatch(): array
     {
-        $vehicle = $this->postJson('/api/v1/vehicles', ['registration_number' => 'WP-TRIP-'.TransportTrip::count(), 'name' => 'Lifecycle Reefer'])->assertCreated()->json('data');
+        $vehicle = $this->postJson('/api/v1/vehicles', ['registration_number' => 'WP-TRIP-'.TransportTrip::count(), 'name' => 'Lifecycle Reefer', 'capacity_tonnes' => 1.2])->assertCreated()->json('data');
         $tripData = $this->postJson('/api/v1/transport-trips', ['vehicle_id' => $vehicle['id'], 'driver_name' => 'Lifecycle Driver', 'origin' => 'Matara', 'destination' => 'Colombo'])->assertCreated()->json('data');
         $batch = FishBatch::query()->whereDoesntHave('transportTrips')->firstOrFail();
         $this->postJson("/api/v1/transport-trips/{$tripData['id']}/batches", ['batch_id' => $batch->id])->assertOk();

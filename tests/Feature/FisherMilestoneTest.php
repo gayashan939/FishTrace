@@ -56,7 +56,7 @@ class FisherMilestoneTest extends TestCase
         $fisher = User::where('email', 'fisher@fishtrace.demo')->firstOrFail();
         Sanctum::actingAs($fisher);
         $org = $fisher->primaryOrganization();
-        $boat = $this->postJson('/api/v1/boats', ['registration_number' => 'TEST-BOAT-1', 'name' => 'Test Vessel', 'capacity_kg' => 500])->assertCreated()->json('data');
+        $boat = $this->postJson('/api/v1/boats', ['registration_number' => 'TEST-BOAT-1', 'name' => 'Test Vessel', 'capacity_kg' => 500, 'type' => 'LONG_LINER', 'length_meters' => 12.5, 'engine_details' => 'Test engine', 'home_port' => 'Kochi'])->assertCreated()->json('data');
         $trip = $this->postJson('/api/v1/fishing-trips', ['boat_id' => $boat['id'], 'general_catch_area' => 'Southern coastal waters'])->assertCreated()->json('data');
         $this->postJson("/api/v1/fishing-trips/{$trip['id']}/start")->assertOk()->assertJsonPath('data.status', 'ACTIVE');
         $species = FishSpecies::firstOrFail();

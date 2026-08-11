@@ -23,7 +23,7 @@ class BoatController extends Controller
     {
         $this->authorize('viewAny', Boat::class);
         $filters = $request->validated();
-        $page = $operations->boats($request->user(), (int) ($filters['per_page'] ?? 20));
+        $page = $operations->boats($request->user(), (int) ($filters['per_page'] ?? 20), $filters);
         $page->setCollection(BoatResource::collection($page->getCollection())->collection);
 
         return ApiResponse::data($page);

@@ -13,7 +13,7 @@ The accepted intake is unique per batch and organization. Once claimed, another 
 
 ## Processing
 
-`POST /processing-records` requires an accepted intake belonging to the current organization. Input weight cannot exceed either batch weight or received weight. Creation atomically moves the batch to `PROCESSING` and creates the required ordered steps:
+`POST /processing-records` requires an accepted intake belonging to the current organization. Input weight cannot exceed either batch weight or received weight. The optional `operator_name` and `processing_area` fields preserve the mobile assignment shown to the operator. Creation atomically moves the batch to `PROCESSING` and creates the required ordered steps:
 
 1. CLEANING — requires `cleaned_weight_kg`.
 2. GRADING — requires `grade`.

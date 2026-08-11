@@ -20,6 +20,7 @@ class UpdateTransportTripRequest extends FormRequest
             'driver_name' => ['sometimes', 'string', 'max:120'],
             'origin' => ['sometimes', 'string', 'max:160'],
             'destination' => ['sometimes', 'string', 'max:160'],
+            'estimated_distance_km' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
             'scheduled_at' => ['nullable', 'date'],
         ];
     }

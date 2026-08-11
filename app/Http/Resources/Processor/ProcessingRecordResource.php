@@ -21,6 +21,8 @@ class ProcessingRecordResource extends JsonResource
             'organization_id' => $record->organization_id,
             'created_by' => $record->created_by,
             'processing_type_id' => $record->processing_type_id,
+            'operator_name' => $record->operator_name,
+            'processing_area' => $record->processing_area,
             'status' => $record->status,
             'input_weight_kg' => $record->input_weight_kg,
             'output_weight_kg' => $record->output_weight_kg,

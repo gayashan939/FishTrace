@@ -8,6 +8,7 @@ use App\Actions\Transport\CancelTransportTrip;
 use App\Actions\Transport\CompleteTransportTrip;
 use App\Actions\Transport\ConfirmTransportDelivery;
 use App\Actions\Transport\CreateTransportTrip;
+use App\Actions\Transport\MarkTransportTripArrived;
 use App\Actions\Transport\RecordTransportIncident;
 use App\Actions\Transport\RemoveBatchFromTrip;
 use App\Actions\Transport\RemoveDeviceFromTrip;
@@ -21,12 +22,14 @@ use App\Http\Requests\Transport\AssignDeviceRequest;
 use App\Http\Requests\Transport\CancelTransportTripRequest;
 use App\Http\Requests\Transport\CompleteTransportTripRequest;
 use App\Http\Requests\Transport\MutateTransportTripRequest;
+use App\Http\Requests\Transport\ResolveTransportBatchRequest;
 use App\Http\Requests\Transport\StoreDeliveryConfirmationRequest;
 use App\Http\Requests\Transport\StoreTransportIncidentRequest;
 use App\Http\Requests\Transport\StoreTransportTripRequest;
 use App\Http\Requests\Transport\TransportTripDirectoryRequest;
 use App\Http\Requests\Transport\UpdateTransportChecklistRequest;
 use App\Http\Requests\Transport\UpdateTransportTripRequest;
+use App\Http\Resources\Fisher\FishBatchResource;
 use App\Http\Resources\IoT\SensorReadingResource;
 use App\Http\Resources\Transport\DeliveryConfirmationResource;
 use App\Http\Resources\Transport\DeviceAssignmentResource;
@@ -45,6 +48,22 @@ use Illuminate\Http\Request;
 
 class TransportTripController extends Controller
 {
+    public function availableBatches(TransportTripDirectoryRequest $request, TransportOperationsQuery $operations): JsonResponse
+    {
+        $page = $operations->availableBatches((int) ($request->validated('per_page') ?? 25));
+        $page->setCollection(FishBatchResource::collection($page->getCollection())->collection);
+
+        return ApiResponse::data($page);
+    }
+
+    public function resolveBatch(ResolveTransportBatchRequest $request, TransportOperationsQuery $operations): JsonResponse
+    {
+        $batch = $operations->resolveAvailableBatch((string) $request->validated('code'));
+        abort_if($batch === null, 404, 'No transport-ready batch matches this QR code.');
+
+        return ApiResponse::data(new FishBatchResource($batch));
+    }
+
     public function dashboard(Request $request, TransportOperationsSummary $summary, TransportTelemetryView $view): JsonResponse
     {
         $this->authorize('viewAny', TransportTrip::class);
@@ -120,6 +139,11 @@ class TransportTripController extends Controller
     }
 
     public function complete(CompleteTransportTripRequest $request, TransportTrip $transportTrip, CompleteTransportTrip $action): JsonResponse
+    {
+        return ApiResponse::data(new TransportTripResource($action->execute($request->user(), $transportTrip)));
+    }
+
+    public function arrive(MutateTransportTripRequest $request, TransportTrip $transportTrip, MarkTransportTripArrived $action): JsonResponse
     {
         return ApiResponse::data(new TransportTripResource($action->execute($request->user(), $transportTrip)));
     }

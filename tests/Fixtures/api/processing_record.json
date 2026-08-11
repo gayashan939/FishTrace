@@ -1,0 +1,34 @@
+{
+  "data": {
+    "id": "8302bf08-f846-4d91-bdbd-3ad1e304bf72",
+    "fish_batch_id": "62de6de8-f121-4b92-b9df-f136fd024d4f",
+    "batch_intake_id": "5a9ca424-c2c7-4773-9a68-2f9f5976d8f4",
+    "organization_id": "d2bf4ae0-604d-4cc9-94ef-86ad92850866",
+    "created_by": "9c775187-c4e8-4415-96ce-58f61f2ef0fb",
+    "processing_type_id": null,
+    "operator_name": "Alex Johnson",
+    "processing_area": "Line 2 – High Care",
+    "status": "IN_PROGRESS",
+    "input_weight_kg": "48.000",
+    "output_weight_kg": null,
+    "waste_weight_kg": null,
+    "notes": "Whole fish line.",
+    "started_at": "2026-08-08T08:30:00.000000Z",
+    "completed_at": null,
+    "created_at": "2026-08-08T08:30:00.000000Z",
+    "updated_at": "2026-08-08T08:30:00.000000Z",
+    "steps": [{
+      "id": "825a83fe-bfb8-41da-bab8-afae4236eb4f",
+      "processing_record_id": "8302bf08-f846-4d91-bdbd-3ad1e304bf72",
+      "type": "CLEANING",
+      "sequence": 1,
+      "status": "PENDING",
+      "measurements": null,
+      "notes": null,
+      "performed_by": null,
+      "started_at": null,
+      "completed_at": null
+    }]
+  },
+  "meta": {}
+}
