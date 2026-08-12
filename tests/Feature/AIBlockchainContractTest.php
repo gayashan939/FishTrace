@@ -66,8 +66,10 @@ class AIBlockchainContractTest extends TestCase
     {
         $this->seed();
         $batch = FishBatch::query()->where('batch_code', 'FT-DEMO-0001')->firstOrFail();
+        $trip = TransportTrip::query()->whereHas('batches', fn ($query) => $query->whereKey($batch->id))->firstOrFail();
         $user = User::query()->where('email', 'fisher@fishtrace.demo')->firstOrFail();
         $prediction = app(SpoilagePredictionService::class)->predict($batch, $user);
+        $this->assertSame($trip->id, $prediction->transport_trip_id);
         Sanctum::actingAs($user);
 
         $latest = $this->getJson("/api/v1/batches/{$batch->id}/ai-predictions/latest")
