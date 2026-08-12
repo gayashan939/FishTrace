@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\IoT\ManageIotDevice;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TransportFilterRequest;
 use App\Models\ColdChainAlert;
@@ -15,7 +16,10 @@ use App\Services\Admin\AdminFilterOptions;
 use App\Services\Admin\TransportOperationsExport;
 use App\Services\Admin\TransportOperationsQuery;
 use App\Services\Admin\TransportOperationsView;
+use App\Services\Firebase\DeviceProvisioner;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -80,6 +84,53 @@ class TransportOperationsController extends Controller
         $f = $request->validated();
 
         return view('admin.transport.devices.index', ['devices' => $this->paginator->paginate($query->devices($f), (int) ($f['per_page'] ?? 25)), 'organizations' => $this->options->organizations('TRANSPORTER'), 'filters' => $f]);
+    }
+
+    public function createDevice(Request $request): View
+    {
+        $this->admin($request);
+        $this->authorize('create', IotDevice::class);
+
+        return view('admin.transport.devices.create', ['organizations' => $this->options->organizations('TRANSPORTER', true)]);
+    }
+
+    public function storeDevice(Request $request, ManageIotDevice $devices, DeviceProvisioner $provisioner): View|RedirectResponse
+    {
+        $this->admin($request);
+        $this->authorize('create', IotDevice::class);
+        $data = $request->validate([
+            'organization_id' => ['required', 'uuid', Rule::exists('organizations', 'id')->where(fn ($query) => $query->where('type', 'TRANSPORTER')->where('is_active', true))],
+            'device_code' => ['required', 'string', 'max:50', 'unique:iot_devices'],
+            'serial_number' => ['required', 'string', 'max:100', 'unique:iot_devices'],
+            'display_name' => ['required', 'string', 'max:120'],
+            'firmware_version' => ['nullable', 'string', 'max:50'],
+            'supports_product_temperature' => ['required', 'boolean'],
+            'supports_air_temperature' => ['required', 'boolean'],
+            'supports_humidity' => ['required', 'boolean'],
+            'supports_gps' => ['required', 'boolean'],
+            'supports_door_sensor' => ['required', 'boolean'],
+            'provision_now' => ['required', 'boolean'],
+        ]);
+        $provisionNow = (bool) $data['provision_now'];
+        unset($data['provision_now']);
+        $device = $devices->create($request->user(), $data);
+
+        if (! $provisionNow) {
+            return redirect()->route('admin.transport.devices.show', $device)->with('status', 'IoT device created. Firebase access has not been provisioned.');
+        }
+
+        $credentials = $provisioner->provision($device, $request->user());
+
+        return view('admin.transport.devices.credentials', compact('device', 'credentials'));
+    }
+
+    public function provisionDevice(Request $request, IotDevice $device, DeviceProvisioner $provisioner): View
+    {
+        $this->admin($request);
+        $this->authorize('update', $device);
+        $credentials = $provisioner->provision($device, $request->user());
+
+        return view('admin.transport.devices.credentials', compact('device', 'credentials'));
     }
 
     public function device(Request $request, IotDevice $device, TransportOperationsView $view): View

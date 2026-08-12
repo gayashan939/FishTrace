@@ -70,6 +70,9 @@ Route::prefix('admin')->middleware('auth')->group(function (): void {
         Route::get('/trips', [TransportOperationsController::class, 'trips'])->name('admin.transport.trips.index');
         Route::get('/trips/{trip}', [TransportOperationsController::class, 'trip'])->name('admin.transport.trips.show');
         Route::get('/devices', [TransportOperationsController::class, 'devices'])->name('admin.transport.devices.index');
+        Route::get('/devices/create', [TransportOperationsController::class, 'createDevice'])->name('admin.transport.devices.create');
+        Route::post('/devices', [TransportOperationsController::class, 'storeDevice'])->name('admin.transport.devices.store');
+        Route::post('/devices/{device}/provision', [TransportOperationsController::class, 'provisionDevice'])->name('admin.transport.devices.provision');
         Route::get('/devices/{device}', [TransportOperationsController::class, 'device'])->name('admin.transport.devices.show');
         Route::get('/telemetry/export', [TransportOperationsController::class, 'exportTelemetry'])->name('admin.transport.telemetry.export');
         Route::get('/telemetry', [TransportOperationsController::class, 'telemetry'])->name('admin.transport.telemetry.index');
