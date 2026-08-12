@@ -21,7 +21,11 @@ class SpoilagePredictionService
     {
         $features = $this->features->forBatch($batch);
         $result = $this->normalizer->normalize($this->client->predict($features));
-        $tripId = DB::table('transport_batches')->where('fish_batch_id', $batch->id)->latest()->value('transport_trip_id');
+        $tripId = DB::table('transport_batches')
+            ->join('transport_trips', 'transport_trips.id', '=', 'transport_batches.transport_trip_id')
+            ->where('transport_batches.fish_batch_id', $batch->id)
+            ->orderByDesc('transport_trips.created_at')
+            ->value('transport_batches.transport_trip_id');
 
         $prediction = DB::transaction(function () use ($batch, $requestedBy, $features, $result, $tripId): AIPrediction {
             $prediction = AIPrediction::create(['fish_batch_id' => $batch->id, 'transport_trip_id' => $tripId, 'requested_by' => $requestedBy?->id, 'risk_level' => $result['riskLevel'], 'confidence' => $result['confidence'], 'probabilities' => $result['probabilities'], 'recommendation' => $result['recommendation'], 'model_version' => $result['modelVersion'], 'provider' => $result['provider'], 'predicted_at' => now()]);
