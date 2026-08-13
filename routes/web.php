@@ -68,6 +68,7 @@ Route::prefix('admin')->middleware('auth')->group(function (): void {
         Route::get('/vehicles', [TransportOperationsController::class, 'vehicles'])->name('admin.transport.vehicles.index');
         Route::get('/vehicles/{vehicle}', [TransportOperationsController::class, 'vehicle'])->name('admin.transport.vehicles.show');
         Route::get('/trips', [TransportOperationsController::class, 'trips'])->name('admin.transport.trips.index');
+        Route::get('/map', [TransportOperationsController::class, 'liveMap'])->name('admin.transport.map');
         Route::get('/trips/{trip}', [TransportOperationsController::class, 'trip'])->name('admin.transport.trips.show');
         Route::get('/devices', [TransportOperationsController::class, 'devices'])->name('admin.transport.devices.index');
         Route::get('/devices/create', [TransportOperationsController::class, 'createDevice'])->name('admin.transport.devices.create');

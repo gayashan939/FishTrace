@@ -34,6 +34,7 @@ class TelemetryAndTraceTest extends TestCase
     {
         $this->seed();
         $response = $this->getJson('/api/v1/public/trace/demo-trace-yellowfin-tuna-2026')->assertOk()->assertJsonPath('data.verification_status', 'VERIFIED')->assertJsonPath('data.batch.species', 'Yellowfin Tuna');
+        $response->assertJsonMissingPath('data.origin.latitude')->assertJsonMissingPath('data.origin.longitude');
         $json = $response->getContent();
         foreach (['firebase_uid', 'firebase_password', 'phone', 'private_data', 'raw_payload'] as $forbidden) {
             $this->assertStringNotContainsString($forbidden, $json);
@@ -56,5 +57,39 @@ class TelemetryAndTraceTest extends TestCase
         $payload['recordedAt'] = now()->addMinutes(2)->getTimestampMs();
         $importer->import($device, 'recovered-1', $payload);
         $this->assertDatabaseHas('cold_chain_alerts', ['type' => 'CRITICAL_TEMPERATURE', 'status' => 'RESOLVED']);
+    }
+
+    public function test_route_geofence_alerts_and_destination_notifications_are_deduplicated(): void
+    {
+        $this->seed();
+        config()->set('fishtrace.geofencing.route_corridor_meters', 1000);
+        config()->set('fishtrace.geofencing.destination_radius_meters', 500);
+        $device = IotDevice::firstOrFail();
+        $trip = TransportTrip::firstOrFail();
+        $trip->update([
+            'origin_latitude' => 6.9,
+            'origin_longitude' => 79.8,
+            'destination_latitude' => 6.9,
+            'destination_longitude' => 80.0,
+        ]);
+        $importer = app(TelemetryImporter::class);
+        $payload = ['tripId' => $trip->id, 'productTemperature' => 3.5, 'latitude' => 7.1, 'longitude' => 79.9, 'batteryPercentage' => 80, 'recordedAt' => now()->getTimestampMs(), 'schemaVersion' => 1];
+
+        $importer->import($device, 'route-deviation-1', $payload);
+        $this->assertDatabaseHas('cold_chain_alerts', ['transport_trip_id' => $trip->id, 'type' => 'ROUTE_DEVIATION', 'status' => 'OPEN']);
+
+        $payload['latitude'] = 6.9;
+        $payload['recordedAt'] = now()->addMinute()->getTimestampMs();
+        $importer->import($device, 'route-recovered-1', $payload);
+        $this->assertDatabaseHas('cold_chain_alerts', ['transport_trip_id' => $trip->id, 'type' => 'ROUTE_DEVIATION', 'status' => 'RESOLVED']);
+
+        $payload['longitude'] = 80.0;
+        $payload['recordedAt'] = now()->addMinutes(2)->getTimestampMs();
+        $importer->import($device, 'destination-geofence-1', $payload);
+        $payload['recordedAt'] = now()->addMinutes(3)->getTimestampMs();
+        $importer->import($device, 'destination-geofence-2', $payload);
+
+        $this->assertDatabaseCount('notification_dispatches', 1);
+        $this->assertDatabaseHas('notification_dispatches', ['event_key' => 'destination-geofence:'.$trip->id, 'notification_type' => 'DESTINATION_GEOFENCE']);
     }
 }

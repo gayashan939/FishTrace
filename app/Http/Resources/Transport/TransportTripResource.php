@@ -24,7 +24,11 @@ class TransportTripResource extends JsonResource
             'driver_name' => $trip->driver_name,
             'status' => $trip->status,
             'origin' => $trip->origin,
+            'origin_latitude' => $trip->origin_latitude,
+            'origin_longitude' => $trip->origin_longitude,
             'destination' => $trip->destination,
+            'destination_latitude' => $trip->destination_latitude,
+            'destination_longitude' => $trip->destination_longitude,
             'estimated_distance_km' => $trip->estimated_distance_km,
             'product_temperature_celsius' => $this->when(
                 $trip->relationLoaded('latestReading'),

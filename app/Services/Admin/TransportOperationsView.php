@@ -4,13 +4,70 @@ namespace App\Services\Admin;
 
 use App\Models\ColdChainAlert;
 use App\Models\IotDevice;
+use App\Models\SensorReading;
 use App\Models\TransportTrip;
 use App\Models\User;
 use App\Models\Vehicle;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class TransportOperationsView
 {
+    public function liveMap(): array
+    {
+        $trips = TransportTrip::query()
+            ->where('status', 'ACTIVE')
+            ->with([
+                'vehicle:id,name,registration_number',
+                'latestReading' => fn ($query) => $query->select([
+                    'sensor_readings.id',
+                    'sensor_readings.transport_trip_id',
+                    'sensor_readings.latitude',
+                    'sensor_readings.longitude',
+                    'sensor_readings.product_temperature',
+                    'sensor_readings.battery_percentage',
+                    'sensor_readings.recorded_at',
+                ]),
+            ])
+            ->orderBy('trip_code')
+            ->get();
+        $tripIds = $trips->pluck('id');
+        $points = DB::table('sensor_readings')
+            ->whereIn('transport_trip_id', $tripIds)
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->latest('recorded_at')
+            ->limit(max(100, $trips->count() * 100))
+            ->get(['transport_trip_id', 'latitude', 'longitude', 'recorded_at'])
+            ->groupBy('transport_trip_id');
+
+        $liveTrips = [];
+
+        foreach ($trips as $trip) {
+            $latestReading = $trip->latestReading;
+            $vehicle = $trip->vehicle;
+            $route = collect($points->get($trip->id, collect()))->sortBy('recorded_at')->values()->map(fn (object $reading): array => [(float) $reading->latitude, (float) $reading->longitude])->all();
+
+            $liveTrips[] = [
+                'id' => $trip->id,
+                'code' => $trip->trip_code,
+                'origin' => $trip->origin,
+                'destination' => $trip->destination,
+                'origin_position' => $trip->origin_latitude !== null && $trip->origin_longitude !== null ? [(float) $trip->origin_latitude, (float) $trip->origin_longitude] : null,
+                'destination_position' => $trip->destination_latitude !== null && $trip->destination_longitude !== null ? [(float) $trip->destination_latitude, (float) $trip->destination_longitude] : null,
+                'current_position' => $latestReading instanceof SensorReading && $latestReading->latitude !== null && $latestReading->longitude !== null ? [(float) $latestReading->latitude, (float) $latestReading->longitude] : null,
+                'temperature' => $latestReading instanceof SensorReading ? $latestReading->product_temperature : null,
+                'battery' => $latestReading instanceof SensorReading ? $latestReading->battery_percentage : null,
+                'recorded_at' => $latestReading instanceof SensorReading ? Carbon::parse($latestReading->recorded_at)->toIso8601String() : null,
+                'vehicle' => $vehicle instanceof Vehicle ? $vehicle->registration_number : null,
+                'route' => $route,
+                'url' => route('admin.transport.trips.show', $trip),
+            ];
+        }
+
+        return ['liveTrips' => $liveTrips];
+    }
+
     public function transporter(User $transporter): array
     {
         abort_unless($transporter->hasRole('TRANSPORTER'), 404);

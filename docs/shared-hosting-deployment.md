@@ -10,6 +10,8 @@ Keep the Laravel project above `public_html`. Point the domain document root at 
 
 Copy `.env.example` to `.env`; set `APP_ENV=production`, `APP_DEBUG=false`, HTTPS `APP_URL`, MySQL, database sessions/queues, and file cache. Generate `APP_KEY` once. Set `SESSION_SECURE_COOKIE=true`, keep `SESSION_HTTP_ONLY=true` and `SESSION_SAME_SITE=lax` (or `strict`), configure a real mail transport, use `QUEUE_FAILED_DRIVER=database-uuids`, and keep `DB_QUEUE_RETRY_AFTER` above the longest 120-second job timeout (the supplied value is 180). Put the Firebase service-account JSON outside public web space with mode 600 and set its absolute path in `FIREBASE_CREDENTIALS`. Set real service tokens only in `.env`; enable `AI_AUTO_PREDICT` and `BLOCKCHAIN_AUTO_ANCHOR` when those production integrations are required.
 
+Set `GEOFENCE_ROUTE_CORRIDOR_METERS` and `GEOFENCE_DESTINATION_RADIUS_METERS` for the operational area. Route deviation is measured against the configured origin-to-destination corridor, so allow for the actual road network when selecting the corridor width.
+
 ```bash
 php artisan migrate --force
 php artisan storage:link

@@ -70,6 +70,14 @@ class TransportOperationsController extends Controller
         return view('admin.transport.trips.index', ['trips' => $this->paginator->paginate($query->trips($f), (int) ($f['per_page'] ?? 25)), 'organizations' => $this->options->organizations('TRANSPORTER'), 'vehicles' => $this->options->vehicles(), 'filters' => $f]);
     }
 
+    public function liveMap(Request $request, TransportOperationsView $view): View
+    {
+        $this->admin($request);
+        $this->authorize('viewAny', TransportTrip::class);
+
+        return view('admin.transport.map', $view->liveMap());
+    }
+
     public function trip(Request $request, TransportTrip $trip, TransportOperationsView $view): View
     {
         $this->admin($request);

@@ -33,6 +33,7 @@ class AdminTransportOperationsTest extends TestCase
         $this->actingAs($admin)->get('/admin/transport/vehicles/'.$vehicle->id)->assertOk()->assertSee('Newest 100 trips');
         $this->actingAs($admin)->get('/admin/transport/trips')->assertOk()->assertSee('Mirissa')->assertSee('Colombo');
         $this->actingAs($admin)->get('/admin/transport/trips/'.$trip->id)->assertOk()->assertSee('Latest 250 permanent readings')->assertSee('Reefer Sensor 01')->assertSee('FT-DEMO-0001');
+        $this->actingAs($admin)->get('/admin/transport/map')->assertOk()->assertSee('Live transport map')->assertSee('TTR-DEMO-001');
         $this->actingAs($admin)->get('/admin/transport/devices')->assertOk()->assertSee('IOT-001');
         $this->actingAs($admin)->get('/admin/transport/devices/'.$device->id)->assertOk()->assertSee('Capabilities')->assertSee('Assignment history');
     }

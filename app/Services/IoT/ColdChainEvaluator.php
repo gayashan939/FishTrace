@@ -65,6 +65,82 @@ class ColdChainEvaluator
 
         $door = $this->rules->resolve($trip->organization_id, 'DOOR_OPENED');
         $this->evaluateBooleanRule($reading, 'DOOR_OPENED', $door, $reading->door_open, fn (SensorReading $candidate): bool => $candidate->door_open);
+
+        $this->evaluateGeofences($reading, $trip);
+    }
+
+    private function evaluateGeofences(SensorReading $reading, TransportTrip $trip): void
+    {
+        if ($reading->latitude === null || $reading->longitude === null) {
+            $this->resolve($reading, 'ROUTE_DEVIATION');
+
+            return;
+        }
+
+        $latitude = (float) $reading->latitude;
+        $longitude = (float) $reading->longitude;
+        if ($trip->origin_latitude !== null && $trip->origin_longitude !== null && $trip->destination_latitude !== null && $trip->destination_longitude !== null) {
+            $deviation = $this->distanceToRouteMeters(
+                $latitude,
+                $longitude,
+                (float) $trip->origin_latitude,
+                (float) $trip->origin_longitude,
+                (float) $trip->destination_latitude,
+                (float) $trip->destination_longitude,
+            );
+            $corridor = max(1.0, (float) config('fishtrace.geofencing.route_corridor_meters', 5000));
+            if ($deviation > $corridor) {
+                $this->openOrRefresh($reading, 'ROUTE_DEVIATION', 'WARNING', $deviation, $corridor);
+            } else {
+                $this->resolve($reading, 'ROUTE_DEVIATION');
+            }
+        } else {
+            $this->resolve($reading, 'ROUTE_DEVIATION');
+        }
+
+        if ($trip->destination_latitude === null || $trip->destination_longitude === null) {
+            return;
+        }
+        $destinationDistance = $this->distanceMeters($latitude, $longitude, (float) $trip->destination_latitude, (float) $trip->destination_longitude);
+        $destinationRadius = max(1.0, (float) config('fishtrace.geofencing.destination_radius_meters', 500));
+        if ($destinationDistance <= $destinationRadius) {
+            $this->notifier->organizationOnce(
+                'destination-geofence:'.$trip->id,
+                $trip->organization_id,
+                NotificationType::DESTINATION_GEOFENCE,
+                'Vehicle entered destination area',
+                $trip->trip_code.' is within '.number_format($destinationRadius, 0).' m of '.$trip->destination.'.',
+                ['transport_trip_id' => $trip->id, 'distance_meters' => round($destinationDistance, 1)],
+            );
+        }
+    }
+
+    private function distanceToRouteMeters(float $latitude, float $longitude, float $startLatitude, float $startLongitude, float $endLatitude, float $endLongitude): float
+    {
+        $referenceLatitude = deg2rad(($startLatitude + $endLatitude + $latitude) / 3);
+        $metersPerDegreeLatitude = 111320.0;
+        $metersPerDegreeLongitude = 111320.0 * cos($referenceLatitude);
+        $pointX = ($longitude - $startLongitude) * $metersPerDegreeLongitude;
+        $pointY = ($latitude - $startLatitude) * $metersPerDegreeLatitude;
+        $endX = ($endLongitude - $startLongitude) * $metersPerDegreeLongitude;
+        $endY = ($endLatitude - $startLatitude) * $metersPerDegreeLatitude;
+        $lengthSquared = ($endX * $endX) + ($endY * $endY);
+        if ($lengthSquared <= 0.0) {
+            return hypot($pointX, $pointY);
+        }
+        $projection = max(0.0, min(1.0, (($pointX * $endX) + ($pointY * $endY)) / $lengthSquared));
+
+        return hypot($pointX - ($projection * $endX), $pointY - ($projection * $endY));
+    }
+
+    private function distanceMeters(float $latitudeA, float $longitudeA, float $latitudeB, float $longitudeB): float
+    {
+        $earthRadius = 6371000.0;
+        $latitudeDelta = deg2rad($latitudeB - $latitudeA);
+        $longitudeDelta = deg2rad($longitudeB - $longitudeA);
+        $a = sin($latitudeDelta / 2) ** 2 + cos(deg2rad($latitudeA)) * cos(deg2rad($latitudeB)) * sin($longitudeDelta / 2) ** 2;
+
+        return $earthRadius * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
 
     private function evaluateBooleanRule(SensorReading $reading, string $type, array $rule, bool $violated, Closure $condition): void
@@ -112,6 +188,7 @@ class ColdChainEvaluator
             'CRITICAL_TEMPERATURE' => NotificationType::CRITICAL_TEMPERATURE,
             'HIGH_TEMPERATURE' => NotificationType::HIGH_TEMPERATURE,
             'LOW_BATTERY' => NotificationType::LOW_BATTERY,
+            'ROUTE_DEVIATION' => NotificationType::ROUTE_DEVIATION,
             default => null,
         };
         if ($notificationType !== null) {

@@ -15,11 +15,11 @@ class TransportTrip extends Model
 {
     use BelongsToOrganization, HasUuids;
 
-    protected $fillable = ['organization_id', 'created_by', 'vehicle_id', 'trip_code', 'driver_name', 'status', 'origin', 'destination', 'estimated_distance_km', 'scheduled_at', 'started_at', 'arrived_at', 'completed_at'];
+    protected $fillable = ['organization_id', 'created_by', 'vehicle_id', 'trip_code', 'driver_name', 'status', 'origin', 'origin_latitude', 'origin_longitude', 'destination', 'destination_latitude', 'destination_longitude', 'estimated_distance_km', 'scheduled_at', 'started_at', 'arrived_at', 'completed_at'];
 
     protected function casts(): array
     {
-        return ['status' => TransportTripStatus::class, 'estimated_distance_km' => 'decimal:2', 'scheduled_at' => 'datetime', 'started_at' => 'datetime', 'arrived_at' => 'datetime', 'completed_at' => 'datetime'];
+        return ['status' => TransportTripStatus::class, 'origin_latitude' => 'decimal:7', 'origin_longitude' => 'decimal:7', 'destination_latitude' => 'decimal:7', 'destination_longitude' => 'decimal:7', 'estimated_distance_km' => 'decimal:2', 'scheduled_at' => 'datetime', 'started_at' => 'datetime', 'arrived_at' => 'datetime', 'completed_at' => 'datetime'];
     }
 
     public function vehicle(): BelongsTo

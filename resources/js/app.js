@@ -1,3 +1,6 @@
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
 document.addEventListener('DOMContentLoaded', () => {
     const main = document.querySelector('.admin-main');
     if (!main) return;
@@ -38,4 +41,61 @@ document.addEventListener('DOMContentLoaded', () => {
             form.append(reset);
         });
     }
+
+    main.querySelectorAll('[data-live-transport-map]').forEach((container) => {
+        const trips = JSON.parse(container.dataset.trips || '[]');
+        const destinationRadius = Number(container.dataset.destinationRadius || 500);
+        const map = L.map(container, { preferCanvas: true });
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors',
+        }).addTo(map);
+        const bounds = [];
+
+        trips.forEach((trip) => {
+            const route = Array.isArray(trip.route) ? trip.route : [];
+            if (route.length > 1) {
+                L.polyline(route, { color: '#075e63', weight: 4, opacity: 0.8 }).addTo(map);
+                bounds.push(...route);
+            }
+            if (trip.origin_position) {
+                L.circleMarker(trip.origin_position, { radius: 7, color: '#047857', fillOpacity: 1 })
+                    .bindTooltip(`Origin: ${trip.origin}`)
+                    .addTo(map);
+                bounds.push(trip.origin_position);
+            }
+            if (trip.destination_position) {
+                L.circle(trip.destination_position, {
+                    radius: destinationRadius,
+                    color: '#dc2626',
+                    fillColor: '#fecaca',
+                    fillOpacity: 0.2,
+                }).bindTooltip(`Destination: ${trip.destination}`).addTo(map);
+                bounds.push(trip.destination_position);
+            }
+            if (trip.current_position) {
+                const popup = document.createElement('div');
+                const title = document.createElement('strong');
+                title.textContent = trip.code;
+                const details = document.createElement('p');
+                details.textContent = `${trip.vehicle || 'Vehicle'} · ${trip.temperature ?? '—'} °C · battery ${trip.battery ?? '—'}%`;
+                const link = document.createElement('a');
+                link.href = trip.url;
+                link.textContent = 'Open trip';
+                link.className = 'text-cyan-700 underline';
+                popup.append(title, details, link);
+                L.circleMarker(trip.current_position, {
+                    radius: 9,
+                    color: '#083344',
+                    fillColor: '#06b6d4',
+                    fillOpacity: 1,
+                    weight: 3,
+                }).bindPopup(popup).addTo(map);
+                bounds.push(trip.current_position);
+            }
+        });
+
+        if (bounds.length > 0) map.fitBounds(bounds, { padding: [32, 32], maxZoom: 14 });
+        else map.setView([7.8731, 80.7718], 7);
+    });
 });
