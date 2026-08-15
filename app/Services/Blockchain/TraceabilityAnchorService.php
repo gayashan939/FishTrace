@@ -22,7 +22,9 @@ class TraceabilityAnchorService
         $hash = $this->eventHash($event);
         [$transaction, $shouldSubmit] = DB::transaction(function () use ($event, $hash): array {
             $transaction = BlockchainTransaction::query()->where('event_hash', $hash)->lockForUpdate()->first();
-            $shouldSubmit = $transaction === null || $transaction->status === 'FAILED';
+            $shouldSubmit = $transaction === null
+                || $transaction->status === 'FAILED'
+                || ($transaction->status === 'PENDING' && $transaction->transaction_reference === null);
             if ($transaction === null) {
                 $transaction = BlockchainTransaction::query()->create(['event_hash' => $hash, 'network' => (string) config('fishtrace.blockchain.network'), 'contract_address' => config('fishtrace.blockchain.contract'), 'status' => 'PENDING', 'attempts' => 0]);
             } elseif ($shouldSubmit) {

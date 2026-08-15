@@ -150,6 +150,32 @@ class ExternalHttpIntegrationTest extends TestCase
         Http::assertSent(fn ($request): bool => $request->method() === 'GET' && str_starts_with($request->url(), 'https://chain.example.test/anchors/tx'));
     }
 
+    public function test_pending_blockchain_reservation_without_a_reference_is_resubmitted(): void
+    {
+        $this->seed();
+        Http::fake([
+            'https://chain.example.test/anchors' => Http::response(['transactionReference' => 'tx/recovered', 'status' => 'SUBMITTED', 'network' => 'testnet']),
+        ]);
+        $this->app->instance(BlockchainClient::class, new HttpBlockchainClient);
+        $event = TraceabilityEvent::firstOrFail();
+        $service = app(TraceabilityAnchorService::class);
+        $transaction = BlockchainTransaction::query()->create([
+            'event_hash' => $service->eventHash($event),
+            'network' => 'testnet',
+            'contract_address' => '0x1234',
+            'status' => 'PENDING',
+            'attempts' => 0,
+        ]);
+
+        $result = $service->anchor($event);
+
+        $this->assertSame($transaction->id, $result->id);
+        $this->assertSame('SUBMITTED', $result->status);
+        $this->assertSame('tx/recovered', $result->transaction_reference);
+        $this->assertSame(1, $result->attempts);
+        Http::assertSentCount(1);
+    }
+
     public function test_http_blockchain_client_rejects_invalid_responses_and_retries_connections(): void
     {
         $client = new HttpBlockchainClient;
