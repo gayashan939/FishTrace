@@ -27,8 +27,15 @@ class FeatureAggregator
         $lastHumidity = $lastReading?->humidity === null ? null : (float) $lastReading->humidity;
         $catchTime = $firstCatch ? Carbon::parse($firstCatch->getAttribute('caught_at')) : null;
         $transportHours = ($firstReading && $lastReading) ? Carbon::parse($firstReading->getAttribute('recorded_at'))->diffInHours(Carbon::parse($lastReading->getAttribute('recorded_at'))) : 0;
+        $timeAboveLimitMinutes = $this->timeAboveLimitMinutes($readings);
+        $catchAgeHours = $catchTime?->diffInHours(now()) ?? 0;
 
-        return ['fishSpecies' => $species->common_name, 'hasTemperatureTelemetry' => $temperatures->isNotEmpty(), 'temperatureReadingCount' => $temperatures->count(), 'currentProductTemperature' => $temperatures->last(), 'averageProductTemperature' => $temperatures->avg(), 'minimumProductTemperature' => $temperatures->min(), 'maximumProductTemperature' => $temperatures->max(), 'airTemperature' => $lastAirTemperature, 'humidity' => $lastHumidity, 'storageDurationHours' => $catchTime?->diffInHours(now()) ?? 0, 'transportDurationHours' => $transportHours, 'timeAboveLimitMinutes' => $this->timeAboveLimitMinutes($readings), 'temperatureViolationCount' => $readings->where('product_temperature', '>', 4)->count(), 'timeSinceCatchHours' => $catchTime?->diffInHours(now()) ?? 0];
+        // Imported/offline telemetry can predate a recently entered catch record.
+        // Keep the derived AI payload internally consistent so that one stale
+        // timestamp does not make the entire prediction request invalid.
+        $storageHours = max($catchAgeHours, $transportHours, (int) ceil($timeAboveLimitMinutes / 60));
+
+        return ['fishSpecies' => $species->common_name, 'hasTemperatureTelemetry' => $temperatures->isNotEmpty(), 'temperatureReadingCount' => $temperatures->count(), 'currentProductTemperature' => $temperatures->last(), 'averageProductTemperature' => $temperatures->avg(), 'minimumProductTemperature' => $temperatures->min(), 'maximumProductTemperature' => $temperatures->max(), 'airTemperature' => $lastAirTemperature, 'humidity' => $lastHumidity, 'storageDurationHours' => $storageHours, 'transportDurationHours' => $transportHours, 'timeAboveLimitMinutes' => $timeAboveLimitMinutes, 'temperatureViolationCount' => $readings->where('product_temperature', '>', 4)->count(), 'timeSinceCatchHours' => $storageHours];
     }
 
     /** @param Collection<int, SensorReading> $readings */

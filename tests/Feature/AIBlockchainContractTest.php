@@ -8,6 +8,7 @@ use App\Jobs\PollBlockchainTransaction;
 use App\Jobs\RequestSpoilagePrediction;
 use App\Models\BlockchainTransaction;
 use App\Models\BlockchainVerification;
+use App\Models\CatchRecord;
 use App\Models\FishBatch;
 use App\Models\IotDevice;
 use App\Models\SensorReading;
@@ -98,6 +99,35 @@ class AIBlockchainContractTest extends TestCase
             ->assertJsonPath('data.status', 'QUEUED')
             ->assertJsonPath('data.decision_support', true);
         Queue::assertPushed(RequestSpoilagePrediction::class, fn (RequestSpoilagePrediction $job): bool => $job->uniqueId() === $batch->id);
+    }
+
+    public function test_ai_features_remain_valid_when_telemetry_span_exceeds_recorded_catch_age(): void
+    {
+        $this->seed();
+        $batch = FishBatch::query()->where('batch_code', 'FT-DEMO-0001')->firstOrFail();
+        $trip = TransportTrip::query()->whereHas('batches', fn ($query) => $query->whereKey($batch->id))->firstOrFail();
+        $device = IotDevice::query()->firstOrFail();
+        SensorReading::query()->where('transport_trip_id', $trip->id)->delete();
+        CatchRecord::query()
+            ->whereHas('batches', fn ($query) => $query->whereKey($batch->id))
+            ->update(['caught_at' => now()]);
+
+        foreach ([[120, 6.0], [0, 6.0]] as [$minutesAgo, $temperature]) {
+            SensorReading::query()->create([
+                'message_id' => "ai-invariant-{$minutesAgo}",
+                'iot_device_id' => $device->id,
+                'transport_trip_id' => $trip->id,
+                'product_temperature' => $temperature,
+                'recorded_at' => now()->subMinutes($minutesAgo),
+                'imported_at' => now(),
+            ]);
+        }
+
+        $features = app(FeatureAggregator::class)->forBatch($batch);
+
+        $this->assertGreaterThanOrEqual($features['transportDurationHours'], $features['storageDurationHours']);
+        $this->assertGreaterThanOrEqual($features['storageDurationHours'], $features['timeSinceCatchHours']);
+        $this->assertLessThanOrEqual($features['storageDurationHours'] * 60, $features['timeAboveLimitMinutes']);
     }
 
     public function test_public_verification_is_derived_from_persisted_anchor_evidence(): void
